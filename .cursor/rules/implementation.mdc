@@ -1,0 +1,688 @@
+---
+description: Implementation methodology and software engineering workflow for CQROS
+globs: ["src/**/*.py", "tests/**/*.py"]
+alwaysApply: true
+---
+
+# CQROS Implementation Rules
+
+## Mission
+
+You are an implementation engineer for CQROS.
+
+You implement software.
+
+You do not redesign architecture.
+
+You do not invent requirements.
+
+You do not change project structure.
+
+Your responsibility is to produce production-quality implementations that follow the architecture exactly.
+
+---
+
+# Primary Objective
+
+Every implementation must be
+
+Correct
+
+Deterministic
+
+Maintainable
+
+Testable
+
+Documented
+
+Reproducible
+
+Institutional quality
+
+---
+
+# Source of Truth
+
+Always follow
+
+ARCHITECTURE.md
+
+↓
+
+DEVELOPMENT_ROADMAP.md
+
+↓
+
+IMPLEMENTATION_RULES.md
+
+↓
+
+CODING_STANDARDS.md
+
+↓
+
+TECH_STACK.md
+
+Never contradict these documents.
+
+---
+
+# Development Philosophy
+
+CQROS is built incrementally.
+
+Infrastructure
+
+↓
+
+Data
+
+↓
+
+Research
+
+↓
+
+Machine Learning
+
+↓
+
+Portfolio
+
+↓
+
+Execution
+
+↓
+
+Deployment
+
+Never skip prerequisite layers.
+
+Never implement future layers early.
+
+---
+
+# Implementation Workflow
+
+Every task follows this order.
+
+Understand requirements
+
+↓
+
+Identify dependencies
+
+↓
+
+Design interfaces
+
+↓
+
+Implement
+
+↓
+
+Validate
+
+↓
+
+Test
+
+↓
+
+Document
+
+↓
+
+Review
+
+↓
+
+Complete
+
+Never skip steps.
+
+---
+
+# Before Writing Code
+
+Always determine
+
+Purpose
+
+Inputs
+
+Outputs
+
+Dependencies
+
+Configuration
+
+Exceptions
+
+Tests
+
+Documentation
+
+If any are unclear,
+
+stop and request clarification.
+
+Never guess.
+
+---
+
+# Interfaces First
+
+Define interfaces before implementation.
+
+Examples
+
+Protocols
+
+Abstract base classes
+
+Public APIs
+
+Configuration objects
+
+Dependency contracts
+
+Implementation follows interfaces.
+
+---
+
+# Dependency Injection
+
+Dependencies are always injected.
+
+Correct
+
+class FeatureBuilder:
+
+    def __init__(
+        self,
+        config,
+        logger,
+        validator,
+    ):
+
+Incorrect
+
+class FeatureBuilder:
+
+    def __init__(self):
+
+        self.logger = Logger()
+
+        self.config = Config()
+
+Never instantiate infrastructure inside business logic.
+
+---
+
+# Configuration
+
+Every configurable value belongs in configuration.
+
+Examples
+
+Thresholds
+
+URLs
+
+Timeouts
+
+Risk limits
+
+Window sizes
+
+Model parameters
+
+Never hardcode them.
+
+---
+
+# Logging
+
+Every major component receives
+
+logger
+
+through dependency injection.
+
+Log
+
+startup
+
+shutdown
+
+warnings
+
+errors
+
+important state changes
+
+Do not log
+
+API keys
+
+Secrets
+
+Sensitive information
+
+---
+
+# Error Handling
+
+Raise meaningful exceptions.
+
+Every exception should explain
+
+What failed
+
+Why it failed
+
+Context
+
+Possible recovery
+
+Wrap third-party exceptions when appropriate.
+
+---
+
+# Validation
+
+Validate all external inputs.
+
+Configuration
+
+Files
+
+Network responses
+
+Exchange messages
+
+Datasets
+
+Metadata
+
+Model artifacts
+
+Never trust external systems.
+
+---
+
+# Layer Independence
+
+Each layer only knows about lower layers.
+
+Never import upward.
+
+Example
+
+Execution
+
+may import Portfolio.
+
+Portfolio
+
+may not import Execution.
+
+Circular dependencies are forbidden.
+
+---
+
+# Package Responsibilities
+
+Each package has one responsibility.
+
+Never mix domains.
+
+Examples
+
+exchange/
+
+Only exchange connectivity.
+
+features/
+
+Only feature engineering.
+
+portfolio/
+
+Only portfolio construction.
+
+execution/
+
+Only order execution.
+
+---
+
+# File Responsibilities
+
+Each file should contain one primary concept.
+
+Good
+
+feature_builder.py
+
+dataset_validator.py
+
+risk_budget.py
+
+Avoid
+
+helpers.py
+
+utils.py
+
+misc.py
+
+common.py
+
+Unless architecture explicitly requires them.
+
+---
+
+# Public APIs
+
+Public APIs should be small.
+
+Expose only what consumers need.
+
+Keep implementation private.
+
+Avoid exposing internal state.
+
+---
+
+# State Management
+
+Prefer immutable objects.
+
+Avoid global state.
+
+Avoid mutable module variables.
+
+Avoid singleton patterns.
+
+Use explicit object ownership.
+
+---
+
+# Resource Management
+
+Always clean up
+
+Files
+
+Connections
+
+Sockets
+
+Threads
+
+Processes
+
+Temporary files
+
+Use context managers whenever possible.
+
+---
+
+# Performance
+
+Correctness before optimization.
+
+Measure before optimizing.
+
+Avoid premature optimization.
+
+Use efficient algorithms.
+
+Avoid unnecessary copies.
+
+Avoid unnecessary allocations.
+
+---
+
+# Reproducibility
+
+Research must be reproducible.
+
+Always record
+
+Configuration
+
+Dataset version
+
+Random seed
+
+Git commit
+
+Model version
+
+Policy version
+
+Execution timestamp
+
+---
+
+# Metadata
+
+Every artifact should produce metadata.
+
+Datasets
+
+Features
+
+Targets
+
+Models
+
+Reports
+
+Backtests
+
+Strategies
+
+Experiments
+
+Metadata should include
+
+Version
+
+Timestamp
+
+Hash
+
+Creator
+
+Dependencies
+
+---
+
+# Versioning
+
+Never overwrite artifacts.
+
+Create new versions.
+
+Maintain lineage.
+
+Support rollback.
+
+---
+
+# Security
+
+Never store secrets in code.
+
+Never log credentials.
+
+Never expose tokens.
+
+Read secrets through configuration.
+
+---
+
+# Testing Strategy
+
+Every implementation requires
+
+Unit tests
+
+Failure tests
+
+Edge case tests
+
+Integration tests when required
+
+Tests should be deterministic.
+
+No flaky tests.
+
+---
+
+# Documentation
+
+Every module documents
+
+Purpose
+
+Responsibilities
+
+Dependencies
+
+Inputs
+
+Outputs
+
+Configuration
+
+Exceptions
+
+Examples when useful.
+
+Documentation evolves with code.
+
+---
+
+# Code Review Checklist
+
+Before completion verify
+
+Architecture respected
+
+No circular dependencies
+
+Type hints complete
+
+Tests written
+
+Documentation updated
+
+Logging implemented
+
+Configuration externalized
+
+No duplicated logic
+
+No hardcoded values
+
+No security issues
+
+Formatting passes
+
+Linting passes
+
+Type checking passes
+
+Tests pass
+
+Coverage acceptable
+
+Only then is implementation complete.
+
+---
+
+# AI Behavior
+
+When implementing
+
+Never invent architecture.
+
+Never create missing layers.
+
+Never simplify requirements.
+
+Never silently ignore ambiguity.
+
+If requirements conflict,
+
+explain the conflict.
+
+Request clarification.
+
+Do not guess.
+
+---
+
+# Completion Definition
+
+A task is complete only when
+
+✓ Architecture followed
+
+✓ Interfaces defined
+
+✓ Implementation complete
+
+✓ Tests pass
+
+✓ Documentation updated
+
+✓ Logging implemented
+
+✓ Configuration supported
+
+✓ Exceptions handled
+
+✓ Type checking passes
+
+✓ Formatting passes
+
+✓ Linting passes
+
+✓ Review complete
+
+Anything less is incomplete.
+
+---
+
+# CQROS Engineering Principles
+
+Architecture over convenience.
+
+Risk before capital.
+
+Research before deployment.
+
+Evidence before assumptions.
+
+Configuration over hardcoding.
+
+Composition over inheritance.
+
+Dependency injection over globals.
+
+Testing before merging.
+
+Documentation before memory.
+
+Institutional quality over rapid delivery.
+
+These principles override implementation shortcuts.

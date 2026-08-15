@@ -1,0 +1,345 @@
+"""Exact-equivalence tests for memory-efficient Factor Validation.
+
+Compares ``full_panel`` vs ``memory_efficient`` execution using the same
+``SimpleFactorValidationEngine`` math. Chunk/batch boundaries must not change
+canonical metrics.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+import polars as pl
+import pytest
+from polars.testing import assert_frame_equal
+
+from cqros.core.constants import EXCHANGE_BINANCE, MARKET_USDT_PERPETUAL
+from cqros.factor_validation import (
+    FACTOR_VALIDATION_SCHEMA,
+    FactorValidationEngineRegistry,
+    FactorValidationExecutionConfig,
+    FactorValidationExecutionMode,
+    FactorValidationPipeline,
+    SimpleFactorValidationEngine,
+    ValidationDatasetBuilder,
+)
+from cqros.factor_validation.schema import CANONICAL_COLUMN_ORDER
+from cqros.factors import FactorStatus, FactorsRepository
+from cqros.factors.schema import (
+    CANONICAL_COLUMN_ORDER as FACTOR_CANONICAL_COLUMN_ORDER,
+)
+from cqros.factors.schema import COLUMN_DTYPES as FACTOR_COLUMN_DTYPES
+from cqros.labels.schema import (
+    CANONICAL_COLUMN_ORDER as LABEL_CANONICAL_COLUMN_ORDER,
+)
+from cqros.labels.schema import COLUMN_DTYPES as LABEL_COLUMN_DTYPES
+from cqros.storage import LabelRepository, ParquetStore, StorageLayout
+
+_MANAGER = "default"
+_EXCHANGE = EXCHANGE_BINANCE
+_MARKET = MARKET_USDT_PERPETUAL
+_TIMEFRAME = "1h"
+_YEAR = 2026
+_FACTOR_VERSION = "1.0.0"
+_FACTOR_CATEGORY = "price"
+
+
+def _open_time(index: int) -> datetime:
+    """Deterministic UTC open time."""
+    return datetime(2024, 1, 1, tzinfo=UTC) + timedelta(hours=index)
+
+
+def _write_factor_partition(
+    layout: StorageLayout,
+    *,
+    symbol: str,
+    rows: list[tuple[int, str, float | None]],
+) -> None:
+    """Write a Factors year partition from ``(open_index, factor_name, value)``."""
+    open_times = [_open_time(open_index) for open_index, _, _ in rows]
+    frame = pl.DataFrame(
+        {
+            "symbol": [symbol] * len(rows),
+            "timeframe": [_TIMEFRAME] * len(rows),
+            "open_time": open_times,
+            "factor_name": [name for _, name, _ in rows],
+            "factor_version": [_FACTOR_VERSION] * len(rows),
+            "factor_category": [_FACTOR_CATEGORY] * len(rows),
+            "factor_group": ["alpha"] * len(rows),
+            "factor_value": [value for _, _, value in rows],
+            "lookback": [20] * len(rows),
+            "prediction_horizon": [1] * len(rows),
+            "enabled": [True] * len(rows),
+            "status": [FactorStatus.ACTIVE.value] * len(rows),
+        }
+    ).select(list(FACTOR_CANONICAL_COLUMN_ORDER)).cast(FACTOR_COLUMN_DTYPES)
+    path = layout.factors_path(
+        _MANAGER, _EXCHANGE, _MARKET, symbol, _TIMEFRAME, year=_YEAR
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.write_parquet(path)
+
+
+def _write_label_partition(
+    layout: StorageLayout,
+    *,
+    symbol: str,
+    rows: list[tuple[int, float | None]],
+) -> None:
+    """Write a Labels year partition from ``(open_index, future_return_1)``."""
+    open_times = [_open_time(open_index) for open_index, _ in rows]
+    frame = pl.DataFrame(
+        {
+            "symbol": [symbol] * len(rows),
+            "timeframe": [_TIMEFRAME] * len(rows),
+            "open_time": open_times,
+            "close_time": open_times,
+            "future_return_1": [value for _, value in rows],
+            "future_return_2": [None] * len(rows),
+            "future_return_3": [None] * len(rows),
+            "future_return_5": [None] * len(rows),
+            "future_return_10": [None] * len(rows),
+            "future_return_20": [None] * len(rows),
+            "label_version": ["default"] * len(rows),
+        }
+    )
+    # Keep only columns present in local label schema order when available.
+    ordered = [column for column in LABEL_CANONICAL_COLUMN_ORDER if column in frame.columns]
+    frame = frame.select(ordered).cast(
+        {column: LABEL_COLUMN_DTYPES[column] for column in ordered if column in LABEL_COLUMN_DTYPES}
+    )
+    path = layout.labels_path(_EXCHANGE, _MARKET, symbol, _TIMEFRAME, year=_YEAR)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.write_parquet(path)
+
+
+def _pipeline(
+    tmp_path: Path,
+    *,
+    mode: FactorValidationExecutionMode,
+    factor_batch_size: int = 1,
+) -> FactorValidationPipeline:
+    """Wire repositories + pipeline for one execution mode."""
+    layout = StorageLayout(tmp_path)
+    store = ParquetStore()
+    factors = FactorsRepository(layout=layout, store=store)
+    labels = LabelRepository(layout=layout, store=store)
+    builder = ValidationDatasetBuilder(factors, labels)
+    registry = FactorValidationEngineRegistry()
+    registry.register("simple", SimpleFactorValidationEngine())
+    return FactorValidationPipeline(
+        registry,
+        builder,
+        execution_config=FactorValidationExecutionConfig(
+            mode=mode,
+            factor_batch_size=factor_batch_size,
+            spill_parent=tmp_path / "spill",
+        ),
+    )
+
+
+def _run(pipeline: FactorValidationPipeline) -> pl.DataFrame:
+    """Execute validation for the synthetic panel."""
+    return pipeline.run(
+        "simple",
+        manager=_MANAGER,
+        exchange=_EXCHANGE,
+        market=_MARKET,
+        timeframe=_TIMEFRAME,
+        year=_YEAR,
+    )
+
+
+def _seed_balanced_panel(tmp_path: Path) -> None:
+    """Seed a multi-symbol, multi-factor, multi-timestamp panel."""
+    layout = StorageLayout(tmp_path)
+    # Two factors, three timestamps, four symbols with uneven history.
+    factor_rows = {
+        "S00": [
+            (0, "mom", 1.0),
+            (0, "vol", 0.2),
+            (1, "mom", 2.0),
+            (1, "vol", 0.3),
+            (2, "mom", 3.0),
+            (2, "vol", 0.4),
+        ],
+        "S01": [
+            (0, "mom", 1.5),
+            (0, "vol", 0.5),
+            (1, "mom", 2.5),
+            (1, "vol", 0.6),
+            (2, "mom", 3.5),
+            (2, "vol", 0.7),
+        ],
+        "S02": [
+            (0, "mom", 0.5),
+            (0, "vol", 0.1),
+            (1, "mom", 1.5),
+            (1, "vol", 0.15),
+            (2, "mom", 2.5),
+            (2, "vol", None),  # null factor
+        ],
+        "S03": [
+            (1, "mom", 4.0),  # missing timestamp 0
+            (1, "vol", 0.9),
+            (2, "mom", 5.0),
+            (2, "vol", 1.0),
+        ],
+    }
+    label_rows = {
+        "S00": [(0, 0.10), (1, 0.20), (2, 0.30)],
+        "S01": [(0, 0.05), (1, 0.15), (2, 0.25)],
+        "S02": [(0, -0.02), (1, 0.00), (2, 0.12)],
+        "S03": [(1, 0.40), (2, 0.50)],
+    }
+    for symbol, rows in factor_rows.items():
+        _write_factor_partition(layout, symbol=symbol, rows=rows)
+    for symbol, rows in label_rows.items():
+        _write_label_partition(layout, symbol=symbol, rows=rows)
+
+
+def test_memory_efficient_matches_full_panel_metrics(tmp_path: Path) -> None:
+    """Canonical metrics match between full_panel and memory_efficient."""
+    _seed_balanced_panel(tmp_path)
+    legacy = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.FULL_PANEL)
+    )
+    efficient = _run(
+        _pipeline(
+            tmp_path,
+            mode=FactorValidationExecutionMode.MEMORY_EFFICIENT,
+            factor_batch_size=1,
+        )
+    )
+    assert tuple(efficient.columns) == CANONICAL_COLUMN_ORDER
+    assert efficient.schema == FACTOR_VALIDATION_SCHEMA
+    assert_frame_equal(legacy, efficient, check_exact=True)
+
+
+@pytest.mark.parametrize("batch_size", [1, 2, 10])
+def test_factor_batch_size_does_not_change_metrics(
+    tmp_path: Path,
+    batch_size: int,
+) -> None:
+    """Changing factor_batch_size must not change canonical validation output."""
+    _seed_balanced_panel(tmp_path)
+    baseline = _run(
+        _pipeline(
+            tmp_path,
+            mode=FactorValidationExecutionMode.MEMORY_EFFICIENT,
+            factor_batch_size=1,
+        )
+    )
+    other = _run(
+        _pipeline(
+            tmp_path,
+            mode=FactorValidationExecutionMode.MEMORY_EFFICIENT,
+            factor_batch_size=batch_size,
+        )
+    )
+    assert_frame_equal(baseline, other, check_exact=True)
+
+
+def test_single_symbol_panel_equivalence(tmp_path: Path) -> None:
+    """Single-symbol panels remain equivalent across execution modes."""
+    layout = StorageLayout(tmp_path)
+    _write_factor_partition(
+        layout,
+        symbol="BTCUSDT",
+        rows=[
+            (0, "mom", 1.0),
+            (1, "mom", 2.0),
+            (2, "mom", 3.0),
+        ],
+    )
+    _write_label_partition(
+        layout,
+        symbol="BTCUSDT",
+        rows=[(0, 0.1), (1, 0.2), (2, 0.3)],
+    )
+    legacy = _run(_pipeline(tmp_path, mode=FactorValidationExecutionMode.FULL_PANEL))
+    efficient = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.MEMORY_EFFICIENT)
+    )
+    assert_frame_equal(legacy, efficient, check_exact=True)
+
+
+def test_one_timestamp_panel_equivalence(tmp_path: Path) -> None:
+    """One-timestamp cross-section remains equivalent across modes."""
+    layout = StorageLayout(tmp_path)
+    for index, symbol in enumerate(("A", "B", "C", "D", "E")):
+        _write_factor_partition(
+            layout,
+            symbol=symbol,
+            rows=[(0, "mom", float(index + 1))],
+        )
+        _write_label_partition(
+            layout,
+            symbol=symbol,
+            rows=[(0, float(index) * 0.01)],
+        )
+    legacy = _run(_pipeline(tmp_path, mode=FactorValidationExecutionMode.FULL_PANEL))
+    efficient = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.MEMORY_EFFICIENT)
+    )
+    assert_frame_equal(legacy, efficient, check_exact=True)
+
+
+def test_all_null_factor_equivalence(tmp_path: Path) -> None:
+    """All-null factor values produce matching FAIL / null IC semantics."""
+    layout = StorageLayout(tmp_path)
+    for symbol in ("A", "B", "C"):
+        _write_factor_partition(
+            layout,
+            symbol=symbol,
+            rows=[(0, "null_factor", None), (1, "null_factor", None)],
+        )
+        _write_label_partition(
+            layout,
+            symbol=symbol,
+            rows=[(0, 0.1), (1, 0.2)],
+        )
+    legacy = _run(_pipeline(tmp_path, mode=FactorValidationExecutionMode.FULL_PANEL))
+    efficient = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.MEMORY_EFFICIENT)
+    )
+    assert_frame_equal(legacy, efficient, check_exact=True)
+    assert legacy["status"].to_list() == ["FAIL"]
+
+
+def test_missing_companion_symbol_excluded(tmp_path: Path) -> None:
+    """Symbols lacking labels are excluded identically in both modes."""
+    layout = StorageLayout(tmp_path)
+    _write_factor_partition(
+        layout,
+        symbol="HAS_BOTH",
+        rows=[(0, "mom", 1.0), (1, "mom", 2.0)],
+    )
+    _write_label_partition(
+        layout,
+        symbol="HAS_BOTH",
+        rows=[(0, 0.1), (1, 0.2)],
+    )
+    _write_factor_partition(
+        layout,
+        symbol="FACTORS_ONLY",
+        rows=[(0, "mom", 9.0), (1, "mom", 8.0)],
+    )
+    legacy = _run(_pipeline(tmp_path, mode=FactorValidationExecutionMode.FULL_PANEL))
+    efficient = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.MEMORY_EFFICIENT)
+    )
+    assert_frame_equal(legacy, efficient, check_exact=True)
+
+
+def test_deterministic_ordering_stable(tmp_path: Path) -> None:
+    """Repeated memory-efficient runs produce identical frames."""
+    _seed_balanced_panel(tmp_path)
+    first = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.MEMORY_EFFICIENT)
+    )
+    second = _run(
+        _pipeline(tmp_path, mode=FactorValidationExecutionMode.MEMORY_EFFICIENT)
+    )
+    assert_frame_equal(first, second, check_exact=True)

@@ -1,0 +1,154 @@
+{
+  "verified_at_utc": "2026-08-14T14:01:57.210332+00:00",
+  "all_unchanged": true,
+  "artifacts": {
+    "factor_selection": {
+      "1d": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/1d/2026.parquet",
+        "bytes": 11915,
+        "sha256": "B6CE50C27CAE6601FC0CED1CB650475BF471C337211D5C89D98B1FEB8432A2BB",
+        "before_sha256": "B6CE50C27CAE6601FC0CED1CB650475BF471C337211D5C89D98B1FEB8432A2BB",
+        "unchanged": true
+      },
+      "4h": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/4h/2026.parquet",
+        "bytes": 11827,
+        "sha256": "BAE924AA39D5DDA300030052B5C69A55DA94DC230A30931ECFDE911BD1592918",
+        "before_sha256": "BAE924AA39D5DDA300030052B5C69A55DA94DC230A30931ECFDE911BD1592918",
+        "unchanged": true
+      },
+      "1h": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/1h/2026.parquet",
+        "bytes": 11816,
+        "sha256": "89F17D02C7A4B6314A785DC8783836F88B233F9F04A83AD76D94E3AFEEC10022",
+        "before_sha256": "89F17D02C7A4B6314A785DC8783836F88B233F9F04A83AD76D94E3AFEEC10022",
+        "unchanged": true
+      },
+      "15m": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/15m/2026.parquet",
+        "bytes": 11813,
+        "sha256": "898A40F41AF52452DB3D170C667DD6A2678CB7B9317C7A2D48CC7518DBE12788",
+        "before_sha256": "898A40F41AF52452DB3D170C667DD6A2678CB7B9317C7A2D48CC7518DBE12788",
+        "unchanged": true
+      },
+      "5m": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/5m/2026.parquet",
+        "bytes": 11812,
+        "sha256": "1C80C6679DAA8133CED64C9D7978F02E4E9742CEBEECECB4DA4289F569F97FB0",
+        "before_sha256": "1C80C6679DAA8133CED64C9D7978F02E4E9742CEBEECECB4DA4289F569F97FB0",
+        "unchanged": true
+      }
+    },
+    "factor_validation": {
+      "1d": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/1d/2026.parquet",
+        "bytes": 13281,
+        "sha256": "B7935E021B31BAD5BE9017577FCD49243A1E022480A47F44A5B6D5D2C4058137",
+        "before_sha256": "B7935E021B31BAD5BE9017577FCD49243A1E022480A47F44A5B6D5D2C4058137",
+        "unchanged": true
+      },
+      "4h": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/4h/2026.parquet",
+        "bytes": 14365,
+        "sha256": "E49A86299CD989A8B1F5B91ABF90E92647993250A71351391EA2F9752F481EED",
+        "before_sha256": "E49A86299CD989A8B1F5B91ABF90E92647993250A71351391EA2F9752F481EED",
+        "unchanged": true
+      },
+      "1h": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/1h/2026.parquet",
+        "bytes": 14444,
+        "sha256": "315EF539F46E94A7B28AB902D98E88D4B79EB7BD666687E5FCED6FF1B7C3CC30",
+        "before_sha256": "315EF539F46E94A7B28AB902D98E88D4B79EB7BD666687E5FCED6FF1B7C3CC30",
+        "unchanged": true
+      },
+      "15m": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/15m/2026.parquet",
+        "bytes": 14425,
+        "sha256": "57FEF604E3F24DA6FBEEC836D5ADCB2979452DAA906A5C60639DA89CCAC38CB2",
+        "before_sha256": "57FEF604E3F24DA6FBEEC836D5ADCB2979452DAA906A5C60639DA89CCAC38CB2",
+        "unchanged": true
+      },
+      "5m": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/5m/2026.parquet",
+        "bytes": 14455,
+        "sha256": "7F81C68E92FD51058DA13F54CDBA3E8F2981357F69D7F4E75A7FFB9474DA213D",
+        "before_sha256": "7F81C68E92FD51058DA13F54CDBA3E8F2981357F69D7F4E75A7FFB9474DA213D",
+        "unchanged": true
+      }
+    },
+    "walk_forward": {
+      "1d": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/1d/2026.parquet",
+        "bytes": 185255,
+        "sha256": "B2391EE4ECBCD89E145015A488789415C410F6A5C050A818192EAEB7DFE58469",
+        "before_sha256": "B2391EE4ECBCD89E145015A488789415C410F6A5C050A818192EAEB7DFE58469",
+        "unchanged": true
+      },
+      "4h": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/4h/2026.parquet",
+        "bytes": 141704,
+        "sha256": "888C4613FA4D3DD8D3345AF9F134D13DCAC2EF35641C073234EAB68E19C01C8F",
+        "before_sha256": "888C4613FA4D3DD8D3345AF9F134D13DCAC2EF35641C073234EAB68E19C01C8F",
+        "unchanged": true
+      },
+      "1h": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/1h/2026.parquet",
+        "bytes": 470948,
+        "sha256": "735E0D62872F436A2BFA9A6A84E9EC5CBC4602703C5C7B43A4CA2462F2476373",
+        "before_sha256": "735E0D62872F436A2BFA9A6A84E9EC5CBC4602703C5C7B43A4CA2462F2476373",
+        "unchanged": true
+      },
+      "15m": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/15m/2026.parquet",
+        "bytes": 226656,
+        "sha256": "97A8BA631707E8E74FBD13BC1577D5AE9EB9156A3F223B6D1D7F4D3882A73806",
+        "before_sha256": "97A8BA631707E8E74FBD13BC1577D5AE9EB9156A3F223B6D1D7F4D3882A73806",
+        "unchanged": true
+      },
+      "5m": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/5m/2026.parquet",
+        "bytes": 390938,
+        "sha256": "937C16B8A98BF5C0C7F95CEA80A9A8B2EAA6EE2828423298951057995730E22D",
+        "before_sha256": "937C16B8A98BF5C0C7F95CEA80A9A8B2EAA6EE2828423298951057995730E22D",
+        "unchanged": true
+      }
+    },
+    "purged_cv": {
+      "1d": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/1d/2026.parquet",
+        "bytes": 5996,
+        "sha256": "C517DC596ABE5F397FF16B0713CCD8781B0DF8B23569BA1C1934F357496A15FB",
+        "before_sha256": "C517DC596ABE5F397FF16B0713CCD8781B0DF8B23569BA1C1934F357496A15FB",
+        "unchanged": true
+      },
+      "4h": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/4h/2026.parquet",
+        "bytes": 5989,
+        "sha256": "2185AB07C048E97C64155BE3004E7DB7C1FFA3101FA39FCA58DFBC6EE46DD1D4",
+        "before_sha256": "2185AB07C048E97C64155BE3004E7DB7C1FFA3101FA39FCA58DFBC6EE46DD1D4",
+        "unchanged": true
+      },
+      "1h": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/1h/2026.parquet",
+        "bytes": 5984,
+        "sha256": "249A8119215FA02CBEAFE2D7E946412CD7441F9E456339A5613EB59D702F0767",
+        "before_sha256": "249A8119215FA02CBEAFE2D7E946412CD7441F9E456339A5613EB59D702F0767",
+        "unchanged": true
+      },
+      "15m": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/15m/2026.parquet",
+        "bytes": 5998,
+        "sha256": "7D6EF28BD26F4A3CAE4E15A3CDBB3DEE5F89CD1625CACFDF61E14723ADE7AE4E",
+        "before_sha256": "7D6EF28BD26F4A3CAE4E15A3CDBB3DEE5F89CD1625CACFDF61E14723ADE7AE4E",
+        "unchanged": true
+      },
+      "5m": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/5m/2026.parquet",
+        "bytes": 5995,
+        "sha256": "15F3745A9CEAFE9C62076B38641C72C752A199D7765B3C7E9EB59FC41665FA26",
+        "before_sha256": "15F3745A9CEAFE9C62076B38641C72C752A199D7765B3C7E9EB59FC41665FA26",
+        "unchanged": true
+      }
+    }
+  }
+}

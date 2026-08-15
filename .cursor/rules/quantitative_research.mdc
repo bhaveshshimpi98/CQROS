@@ -1,0 +1,488 @@
+---
+description: Quantitative research methodology and scientific standards for CQROS
+globs:
+  - "src/**/*.py"
+alwaysApply: true
+---
+
+# CQROS Quantitative Research Rules
+
+## Identity
+
+CQROS is a quantitative research platform.
+
+Research quality always has higher priority than implementation speed.
+
+Never optimize for convenience at the expense of scientific validity.
+
+---
+
+# Scientific Method
+
+Every research task follows
+
+Question
+
+↓
+
+Hypothesis
+
+↓
+
+Dataset
+
+↓
+
+Feature Engineering
+
+↓
+
+Target Generation
+
+↓
+
+Statistical Validation
+
+↓
+
+Walk Forward Validation
+
+↓
+
+Stress Testing
+
+↓
+
+Approval
+
+↓
+
+Production
+
+Never skip a stage.
+
+---
+
+# Reproducibility
+
+Every experiment must be reproducible.
+
+Record
+
+Dataset Version
+
+Dataset Hash
+
+Feature Version
+
+Target Version
+
+Policy Version
+
+Configuration Version
+
+Random Seed
+
+Git Commit
+
+Container Version
+
+Python Version
+
+Library Versions
+
+Execution Timestamp
+
+Researcher
+
+Nothing is anonymous.
+
+---
+
+# Dataset Rules
+
+Research datasets must be
+
+Immutable
+
+Versioned
+
+Timestamp aligned
+
+Leakage free
+
+Schema validated
+
+Lineage tracked
+
+Research Ready
+
+Never modify datasets in-place.
+
+---
+
+# Feature Engineering
+
+Every feature requires metadata.
+
+Feature metadata includes
+
+Name
+
+Description
+
+Formula
+
+Dependencies
+
+Window
+
+Normalization
+
+Expected Range
+
+Missing Value Policy
+
+Version
+
+Creator
+
+Validation Status
+
+Deprecation Status
+
+---
+
+# Feature Health
+
+Every feature continuously tracks
+
+Missing Rate
+
+Distribution Drift
+
+Population Stability Index
+
+Correlation Drift
+
+Regime Stability
+
+Update Frequency
+
+Production Health
+
+Automatically deprecate unstable features.
+
+---
+
+# Feature Approval
+
+A feature cannot be promoted unless
+
+Leakage Score = 0
+
+Validation Passed
+
+Metadata Complete
+
+Version Assigned
+
+Statistical Significance Verified
+
+---
+
+# Target Rules
+
+Targets must
+
+Look only forward
+
+Never overlap improperly
+
+Be timestamp aligned
+
+Support multiple horizons
+
+Support volatility adjustment
+
+Support regime evaluation
+
+Never use future information.
+
+---
+
+# Leakage Prevention
+
+Zero tolerance.
+
+Validate
+
+Timestamp Leakage
+
+Window Leakage
+
+Target Leakage
+
+Label Leakage
+
+Feature Leakage
+
+Cross Dataset Leakage
+
+Metadata Leakage
+
+If leakage exists
+
+STOP.
+
+Reject the dataset.
+
+---
+
+# Statistical Validation
+
+Every factor reports
+
+IC
+
+Rank IC
+
+Newey-West t-stat
+
+Bootstrap Confidence
+
+Effective Sample Size
+
+Sharpe
+
+Sortino
+
+Trade Count
+
+Turnover
+
+Capacity
+
+Drawdown
+
+Tail Risk
+
+Never promote a factor without statistics.
+
+---
+
+# Promotion Thresholds
+
+Every strategy family defines configurable minimums.
+
+Examples
+
+Minimum IC
+
+Minimum Rank IC
+
+Minimum ESS
+
+Minimum Trade Count
+
+Minimum OOS Sharpe
+
+Minimum t-stat
+
+Thresholds belong in Policy Content.
+
+Never hardcode them.
+
+---
+
+# Regime Awareness
+
+All statistics are computed
+
+Overall
+
+Bull
+
+Bear
+
+Sideways
+
+High Volatility
+
+Low Volatility
+
+Liquidity Stress
+
+Panic
+
+Recovery
+
+Classify research as
+
+Regime Robust
+
+Regime Limited
+
+Regime Specific
+
+---
+
+# Walk Forward
+
+Research approval requires
+
+Rolling windows
+
+Multiple periods
+
+Multiple market conditions
+
+Multiple assets
+
+No random train/test split for time series.
+
+---
+
+# Cross Validation
+
+Use
+
+Rolling Validation
+
+Expanding Window
+
+Anchored Walk Forward
+
+Purged CV
+
+Embargo CV
+
+Never use standard K-Fold for time series.
+
+---
+
+# Model Evaluation
+
+Measure
+
+Prediction Quality
+
+Calibration
+
+Stability
+
+Turnover
+
+Capacity
+
+Execution Cost
+
+Regime Performance
+
+Uncertainty
+
+Confidence
+
+---
+
+# Experiment Tracking
+
+Every experiment records
+
+Objective
+
+Hypothesis
+
+Dataset
+
+Features
+
+Targets
+
+Configuration
+
+Parameters
+
+Models
+
+Metrics
+
+Artifacts
+
+Approval Status
+
+Reviewer
+
+Comments
+
+Nothing is lost.
+
+---
+
+# Research Governance
+
+Research states
+
+Draft
+
+Running
+
+Validated
+
+Approved
+
+Rejected
+
+Archived
+
+Deprecated
+
+Production
+
+Every transition is recorded.
+
+---
+
+# AI Rules
+
+Never claim statistical significance without evidence.
+
+Never ignore leakage.
+
+Never use future data.
+
+Never approve research with incomplete metadata.
+
+Never bypass validation.
+
+If uncertainty exists,
+
+stop and explain why.
+
+---
+
+# Completion
+
+Research is complete only when
+
+✓ Dataset Validated
+
+✓ Leakage Free
+
+✓ Metadata Complete
+
+✓ Features Validated
+
+✓ Targets Validated
+
+✓ Statistics Generated
+
+✓ Walk Forward Completed
+
+✓ Stress Tests Passed
+
+✓ Governance Approved
+
+✓ Documentation Updated
+
+Only then may research move toward production.

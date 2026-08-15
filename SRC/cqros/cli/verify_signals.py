@@ -1,0 +1,938 @@
+"""CQROS signal-dataset verification CLI.
+
+Purpose:
+    Provide an argparse-based production entry point that discovers signal
+    partitions and executes ``SignalVerifier`` across the universe with
+    bounded symbol concurrency.
+
+Responsibilities:
+    - Parse CLI arguments for signal dataset verification
+    - Discover available signal partitions through ``SignalRepository``
+    - Load partitions and verify them with ``SignalVerifier``
+    - Aggregate results into a final PASS/FAIL report
+    - Print structured per-partition failure diagnostics
+    - Print the report and return an exit code
+
+Dependencies:
+    ``argparse``, ``asyncio``, ``polars``, ``cqros.config``, ``cqros.core``,
+    ``cqros.signals.verification``, and ``cqros.storage``.
+
+Public API:
+    ``build_parser``, ``build_options``, ``discover_work``,
+    ``format_partition_failure``, ``format_summary``, ``run_verification``,
+    and ``main``.
+
+Notes:
+    This module is a thin composition root. It does not implement verification
+    logic, signal semantics, or repository filesystem walks beyond calling
+    repository discovery and load APIs. Optional ``--model`` / ``--version``
+    filters restrict verification to matching identity rows after load.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import logging
+import sys
+import time
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Final
+
+import polars as pl
+
+from cqros.config.models import ResearchConfig
+from cqros.core.constants import (
+    DEFAULT_STORAGE_ROOT,
+    EXCHANGE_BINANCE,
+    MARKET_USDT_PERPETUAL,
+    SUPPORTED_TIMEFRAMES,
+)
+from cqros.core.exceptions import CQROSError, ValidationError
+from cqros.core.types import Symbol, Timeframe
+from cqros.signals.verification import SignalVerifier, VerificationReport
+from cqros.storage import (
+    ParquetStore,
+    SignalPartitionRef,
+    SignalRepository,
+    StorageLayout,
+)
+
+__all__ = [
+    "DiscoveredWorkItem",
+    "SignalTaskResult",
+    "VerifySignalOptions",
+    "VerifySignalSummary",
+    "build_options",
+    "build_parser",
+    "discover_work",
+    "format_partition_failure",
+    "format_summary",
+    "main",
+    "run_verification",
+]
+
+_logger = logging.getLogger(__name__)
+
+_EXIT_SUCCESS: Final[int] = 0
+_EXIT_FAILURE: Final[int] = 1
+
+_DEFAULT_WORKER_COUNT: Final[int] = ResearchConfig().worker_count
+
+_EXCHANGE: Final[str] = EXCHANGE_BINANCE
+_MARKET: Final[str] = MARKET_USDT_PERPETUAL
+
+_ERROR_WORKERS: Final[str] = "CLI-VERIFY-SIGNALS-001"
+_ERROR_TIMEFRAME: Final[str] = "CLI-VERIFY-SIGNALS-002"
+_ERROR_YEAR: Final[str] = "CLI-VERIFY-SIGNALS-003"
+_ERROR_MODEL: Final[str] = "CLI-VERIFY-SIGNALS-004"
+_ERROR_VERSION: Final[str] = "CLI-VERIFY-SIGNALS-005"
+
+_VERIFIER_NAME: Final[str] = "SignalVerifier"
+_DATASET_DISPLAY_NAME: Final[str] = "Signals"
+
+_COL_MODEL_NAME: Final[str] = "model_name"
+_COL_MODEL_VERSION: Final[str] = "model_version"
+
+
+@dataclass(frozen=True, slots=True)
+class VerifySignalOptions:
+    """Immutable CLI options for signal dataset verification.
+
+    Attributes:
+        storage_root: Storage root containing ``signals``.
+        model: Optional model-name allowlist identity. ``None`` keeps all.
+        version: Optional model-version allowlist identity. ``None`` keeps all.
+        symbols: Optional symbol allowlist. ``None`` discovers all.
+        timeframes: Optional timeframe allowlist. ``None`` discovers all.
+        years: Optional year allowlist. ``None`` discovers all.
+        workers: Maximum concurrent symbols.
+        verbose: When ``True``, enable INFO logging.
+        debug: When ``True``, enable DEBUG logging and log full failure
+            tracebacks.
+    """
+
+    storage_root: Path
+    model: str | None
+    version: str | None
+    symbols: tuple[Symbol, ...] | None
+    timeframes: tuple[Timeframe, ...] | None
+    years: tuple[int, ...] | None
+    workers: int
+    verbose: bool
+    debug: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveredWorkItem:
+    """One discovered signal partition group ready for verification.
+
+    Attributes:
+        symbol: Signal symbol.
+        timeframe: Available bar interval.
+        years: Calendar years with existing signal parquet partitions.
+    """
+
+    symbol: Symbol
+    timeframe: Timeframe
+    years: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SignalTaskResult:
+    """Immutable result for one symbol/timeframe/year verification task.
+
+    Attributes:
+        symbol: Signal symbol.
+        timeframe: Bar interval.
+        year: Calendar year of the partition.
+        status: ``succeeded`` or ``failed``.
+        report: Verifier report when succeeded.
+        error_type: Exception type name when failed.
+        error_message: Exception message when failed.
+        error_code: Optional CQROS error code when failed.
+    """
+
+    symbol: Symbol
+    timeframe: Timeframe
+    year: int
+    status: str
+    report: VerificationReport | None = None
+    error_type: str | None = None
+    error_message: str | None = None
+    error_code: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class VerifySignalSummary:
+    """Immutable aggregate summary for a signal verification run.
+
+    Attributes:
+        symbols_verified: Unique symbols for which verification was attempted.
+        datasets_verified: Unique datasets attempted (always signals tier).
+        timeframes_verified: Unique timeframes attempted.
+        successful_tasks: Count of succeeded partition tasks.
+        failed_tasks: Count of failed partition tasks.
+        rows_checked: Sum of verifier ``rows_checked`` across successes.
+        duplicate_timestamps: Sum of duplicate-timestamp counters.
+        null_rows: Sum of null-row counters.
+        nan_rows: Sum of NaN-row counters.
+        invalid_timestamps: Sum of invalid-timestamp counters.
+        invalid_signal_rows: Sum of invalid-signal counters.
+        warnings: Sum of warning counts across successes.
+        duration_seconds: Wall-clock verification duration.
+        repository_passed: Whether the repository status is PASS.
+    """
+
+    symbols_verified: int
+    datasets_verified: int
+    timeframes_verified: int
+    successful_tasks: int
+    failed_tasks: int
+    rows_checked: int
+    duplicate_timestamps: int
+    null_rows: int
+    nan_rows: int
+    invalid_timestamps: int
+    invalid_signal_rows: int
+    warnings: int
+    duration_seconds: float
+    repository_passed: bool
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Create the signal-dataset verification argument parser.
+
+    Returns:
+        Configured ``ArgumentParser`` for verification flags.
+    """
+    parser = argparse.ArgumentParser(
+        prog="cqros-verify-signals",
+        description=("Verify CQROS signal datasets across the discovered " "signals universe."),
+    )
+    parser.add_argument(
+        "--model",
+        dest="model",
+        default=None,
+        metavar="NAME",
+        help=(
+            "Optional model-name filter applied to loaded signal rows. "
+            "Omit to verify all models present in each partition."
+        ),
+    )
+    parser.add_argument(
+        "--version",
+        dest="version",
+        default=None,
+        metavar="VERSION",
+        help=(
+            "Optional model-version filter applied to loaded signal rows. "
+            "Omit to verify all versions present in each partition."
+        ),
+    )
+    parser.add_argument(
+        "--symbols",
+        dest="symbols",
+        nargs="*",
+        default=None,
+        metavar="SYMBOL",
+        help="Optional symbol allowlist (0..N values). Omit to discover all.",
+    )
+    parser.add_argument(
+        "--timeframes",
+        dest="timeframes",
+        nargs="*",
+        default=None,
+        metavar="TIMEFRAME",
+        help="Optional timeframe allowlist (0..N values). Omit to discover all.",
+    )
+    parser.add_argument(
+        "--years",
+        dest="years",
+        nargs="*",
+        default=None,
+        metavar="YEAR",
+        help="Optional calendar-year allowlist (0..N values). Omit to discover all.",
+    )
+    parser.add_argument(
+        "--workers",
+        dest="workers",
+        type=int,
+        default=_DEFAULT_WORKER_COUNT,
+        metavar="INT",
+        help=("Maximum concurrent symbols " f"(default: {_DEFAULT_WORKER_COUNT})."),
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable INFO logging.",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help=("Enable DEBUG logging and log complete failure tracebacks " "with logger.exception."),
+    )
+    return parser
+
+
+def build_options(args: argparse.Namespace) -> VerifySignalOptions:
+    """Map parsed CLI arguments onto ``VerifySignalOptions``.
+
+    Args:
+        args: Namespace produced by ``build_parser().parse_args(...)``.
+
+    Returns:
+        Immutable verification options.
+
+    Raises:
+        ValidationError: If ``workers`` is not positive or filters are invalid.
+    """
+    workers = int(args.workers)
+    if workers <= 0:
+        raise ValidationError(
+            "workers must be greater than 0",
+            error_code=_ERROR_WORKERS,
+            details={"parameter": "workers", "value": workers},
+        )
+
+    model = _normalize_optional_identity(args.model, parameter="model", error_code=_ERROR_MODEL)
+    version = _normalize_optional_identity(
+        args.version,
+        parameter="version",
+        error_code=_ERROR_VERSION,
+    )
+
+    return VerifySignalOptions(
+        storage_root=Path(DEFAULT_STORAGE_ROOT),
+        model=model,
+        version=version,
+        symbols=_normalize_symbols(args.symbols),
+        timeframes=_normalize_timeframes(args.timeframes),
+        years=_normalize_years(args.years),
+        workers=workers,
+        verbose=bool(args.verbose),
+        debug=bool(args.debug),
+    )
+
+
+def discover_work(
+    repository: SignalRepository,
+    options: VerifySignalOptions,
+) -> tuple[DiscoveredWorkItem, ...]:
+    """Discover signal partitions matching the CLI filters.
+
+    Args:
+        repository: Signal repository providing discovery APIs.
+        options: CLI filters for symbol, timeframe, and year.
+
+    Returns:
+        Deterministically ordered discovered work items.
+    """
+    partitions = repository.discover_partitions(
+        symbols=options.symbols,
+        timeframes=options.timeframes,
+        exchange=_EXCHANGE,
+        market=_MARKET,
+    )
+    return _group_partitions(partitions, year_filter=options.years)
+
+
+def format_partition_failure(
+    *,
+    dataset: str,
+    symbol: Symbol,
+    timeframe: Timeframe,
+    partition: str,
+    verifier: str,
+    exception_type: str,
+    message: str,
+    code: str | None = None,
+) -> str:
+    """Render a structured per-partition verification failure report.
+
+    Args:
+        dataset: Human-readable dataset label.
+        symbol: Failed symbol.
+        timeframe: Failed timeframe.
+        partition: Partition identifier (for example ``2025.parquet``).
+        verifier: Verifier class name responsible for the partition.
+        exception_type: Exception type name.
+        message: Human-readable failure message.
+        code: Optional CQROS / signal validation error code.
+
+    Returns:
+        Multi-line failure text suitable for stdout. Does not include a
+        traceback.
+    """
+    lines = [
+        "FAILED",
+        "",
+        f"Dataset: {dataset}",
+        f"Symbol: {symbol}",
+        f"Timeframe: {timeframe}",
+        f"Partition: {partition}",
+        f"Verifier: {verifier}",
+        f"Exception: {exception_type}",
+    ]
+    if code is not None:
+        lines.append(f"Code: {code}")
+    lines.append(f"Message: {message}")
+    return "\n".join(lines) + "\n"
+
+
+def format_summary(summary: VerifySignalSummary) -> str:
+    """Render a deterministic verification summary report.
+
+    Args:
+        summary: Aggregate verification summary.
+
+    Returns:
+        Multi-line summary text suitable for stdout.
+    """
+    status = "PASS" if summary.repository_passed else "FAIL"
+    lines = [
+        "=====================================",
+        "CQROS Verification Summary",
+        "=====================================",
+        "",
+        f"Symbols verified: {summary.symbols_verified}",
+        f"Datasets verified: {summary.datasets_verified}",
+        f"Timeframes verified: {summary.timeframes_verified}",
+        f"Successful tasks: {summary.successful_tasks}",
+        f"Failed tasks: {summary.failed_tasks}",
+        f"Rows checked: {summary.rows_checked}",
+        f"Duplicate timestamps: {summary.duplicate_timestamps}",
+        f"NULL rows: {summary.null_rows}",
+        f"NaN rows: {summary.nan_rows}",
+        f"Invalid timestamps: {summary.invalid_timestamps}",
+        f"Invalid signal rows: {summary.invalid_signal_rows}",
+        f"Warnings: {summary.warnings}",
+        f"Verification duration: {_format_duration(summary.duration_seconds)}",
+        "",
+        "Repository status:",
+        "",
+        status,
+        "",
+        "=====================================",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+async def main(argv: Sequence[str] | None = None) -> int:
+    """Run the signal-dataset verification CLI.
+
+    Args:
+        argv: Optional argument vector. When ``None``, ``sys.argv[1:]`` is used.
+
+    Returns:
+        ``0`` when the repository passed; ``1`` on failure or fatal CLI error.
+    """
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    try:
+        options = build_options(args)
+        _configure_logging(verbose=options.verbose, debug=options.debug)
+        layout = StorageLayout(options.storage_root)
+        repository = SignalRepository(layout, ParquetStore())
+        work = discover_work(repository, options)
+        summary = await run_verification(
+            repository=repository,
+            verifier=SignalVerifier(),
+            options=options,
+            work=work,
+        )
+    except CQROSError as exc:
+        print(str(exc), file=sys.stderr)
+        return _EXIT_FAILURE
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return _EXIT_FAILURE
+
+    print(format_summary(summary), end="")
+    return _EXIT_SUCCESS if summary.repository_passed else _EXIT_FAILURE
+
+
+async def run_verification(
+    *,
+    repository: SignalRepository,
+    verifier: SignalVerifier,
+    options: VerifySignalOptions,
+    work: Sequence[DiscoveredWorkItem],
+) -> VerifySignalSummary:
+    """Execute discovered work through a bounded symbol worker pool.
+
+    Args:
+        repository: Injected signal repository.
+        verifier: Injected signal verifier.
+        options: Immutable verification options.
+        work: Discovered work items.
+
+    Returns:
+        Aggregate immutable summary.
+    """
+    started = time.perf_counter()
+    if len(work) == 0:
+        return VerifySignalSummary(
+            symbols_verified=0,
+            datasets_verified=0,
+            timeframes_verified=0,
+            successful_tasks=0,
+            failed_tasks=0,
+            rows_checked=0,
+            duplicate_timestamps=0,
+            null_rows=0,
+            nan_rows=0,
+            invalid_timestamps=0,
+            invalid_signal_rows=0,
+            warnings=0,
+            duration_seconds=time.perf_counter() - started,
+            repository_passed=True,
+        )
+
+    work_by_symbol = _group_work_by_symbol(work)
+    results = await _run_worker_pool(
+        repository=repository,
+        verifier=verifier,
+        work_by_symbol=work_by_symbol,
+        worker_count=options.workers,
+        debug=options.debug,
+        model=options.model,
+        version=options.version,
+    )
+    return _build_summary(
+        results=results,
+        duration_seconds=time.perf_counter() - started,
+    )
+
+
+def _configure_logging(*, verbose: bool, debug: bool) -> None:
+    """Configure process logging for the CLI entry point."""
+    if debug:
+        level = logging.DEBUG
+    elif verbose:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+    logging.getLogger("cqros").setLevel(level)
+
+
+def _normalize_optional_identity(
+    value: object | None,
+    *,
+    parameter: str,
+    error_code: str,
+) -> str | None:
+    """Normalize an optional non-empty identity string filter."""
+    if value is None:
+        return None
+    normalized = str(value).strip()
+    if normalized == "":
+        raise ValidationError(
+            f"{parameter} must be a non-empty string when provided",
+            error_code=error_code,
+            details={"parameter": parameter, "value": value},
+        )
+    return normalized
+
+
+def _normalize_symbols(values: Sequence[str] | None) -> tuple[Symbol, ...] | None:
+    """Validate and freeze optional symbol filters."""
+    if values is None:
+        return None
+    normalized: list[Symbol] = []
+    for symbol in values:
+        stripped = symbol.strip()
+        if stripped == "":
+            continue
+        if stripped not in normalized:
+            normalized.append(stripped)
+    return tuple(normalized) if normalized else None
+
+
+def _normalize_timeframes(
+    values: Sequence[str] | None,
+) -> tuple[Timeframe, ...] | None:
+    """Validate and freeze optional timeframe filters."""
+    if values is None:
+        return None
+    normalized: list[Timeframe] = []
+    for timeframe in values:
+        if timeframe not in SUPPORTED_TIMEFRAMES:
+            raise ValidationError(
+                f"unsupported timeframe: {timeframe}",
+                error_code=_ERROR_TIMEFRAME,
+                details={"parameter": "timeframes", "value": timeframe},
+            )
+        if timeframe not in normalized:
+            normalized.append(timeframe)
+    return tuple(normalized) if normalized else None
+
+
+def _normalize_years(values: Sequence[str] | None) -> tuple[int, ...] | None:
+    """Validate and freeze optional year filters."""
+    if values is None:
+        return None
+    normalized: list[int] = []
+    for raw in values:
+        try:
+            year = int(raw)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError(
+                f"invalid year: {raw}",
+                error_code=_ERROR_YEAR,
+                details={"parameter": "years", "value": raw},
+            ) from exc
+        if year < 1:
+            raise ValidationError(
+                f"invalid year: {raw}",
+                error_code=_ERROR_YEAR,
+                details={"parameter": "years", "value": raw},
+            )
+        if year not in normalized:
+            normalized.append(year)
+    return tuple(sorted(normalized)) if normalized else None
+
+
+def _group_partitions(
+    partitions: Sequence[SignalPartitionRef],
+    *,
+    year_filter: tuple[int, ...] | None,
+) -> tuple[DiscoveredWorkItem, ...]:
+    """Group signal year partitions into symbol/timeframe work items."""
+    year_allowlist = set(year_filter) if year_filter is not None else None
+    grouped: dict[tuple[str, str], list[int]] = {}
+    for partition in partitions:
+        if year_allowlist is not None and partition.year not in year_allowlist:
+            continue
+        key = (partition.symbol, partition.timeframe)
+        grouped.setdefault(key, []).append(partition.year)
+
+    items: list[DiscoveredWorkItem] = []
+    for (symbol, timeframe), years in grouped.items():
+        items.append(
+            DiscoveredWorkItem(
+                symbol=symbol,
+                timeframe=timeframe,
+                years=tuple(sorted(years)),
+            )
+        )
+    return tuple(
+        sorted(
+            items,
+            key=lambda item: (item.symbol, item.timeframe),
+        )
+    )
+
+
+def _group_work_by_symbol(
+    work: Sequence[DiscoveredWorkItem],
+) -> dict[Symbol, tuple[DiscoveredWorkItem, ...]]:
+    """Group discovered work by symbol while preserving discovery order."""
+    grouped: dict[Symbol, list[DiscoveredWorkItem]] = {}
+    for item in work:
+        grouped.setdefault(item.symbol, []).append(item)
+    return {symbol: tuple(items) for symbol, items in grouped.items()}
+
+
+async def _run_worker_pool(
+    *,
+    repository: SignalRepository,
+    verifier: SignalVerifier,
+    work_by_symbol: Mapping[Symbol, Sequence[DiscoveredWorkItem]],
+    worker_count: int,
+    debug: bool,
+    model: str | None,
+    version: str | None,
+) -> tuple[SignalTaskResult, ...]:
+    """Drain symbols through a bounded asyncio worker pool."""
+    symbols = tuple(work_by_symbol.keys())
+    if len(symbols) == 0:
+        return ()
+
+    queue: asyncio.Queue[Symbol | None] = asyncio.Queue()
+    for symbol in symbols:
+        queue.put_nowait(symbol)
+    for _ in range(worker_count):
+        queue.put_nowait(None)
+
+    collected: list[SignalTaskResult] = []
+    lock = asyncio.Lock()
+
+    async def worker() -> None:
+        while True:
+            item = await queue.get()
+            try:
+                if item is None:
+                    return
+                results = await _verify_symbol_work(
+                    repository=repository,
+                    verifier=verifier,
+                    symbol=item,
+                    work_items=work_by_symbol[item],
+                    debug=debug,
+                    model=model,
+                    version=version,
+                )
+                async with lock:
+                    collected.extend(results)
+            finally:
+                queue.task_done()
+
+    worker_tasks = [
+        asyncio.create_task(worker(), name=f"verify-signals-worker-{index}")
+        for index in range(worker_count)
+    ]
+    try:
+        await asyncio.gather(*worker_tasks)
+    finally:
+        for task in worker_tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*worker_tasks, return_exceptions=True)
+
+    return tuple(
+        sorted(
+            collected,
+            key=lambda result: (result.symbol, result.timeframe, result.year),
+        )
+    )
+
+
+async def _verify_symbol_work(
+    *,
+    repository: SignalRepository,
+    verifier: SignalVerifier,
+    symbol: Symbol,
+    work_items: Sequence[DiscoveredWorkItem],
+    debug: bool,
+    model: str | None,
+    version: str | None,
+) -> tuple[SignalTaskResult, ...]:
+    """Verify every discovered year for one symbol sequentially."""
+    results: list[SignalTaskResult] = []
+    for item in work_items:
+        for year in item.years:
+            result = await asyncio.to_thread(
+                _verify_partition,
+                repository,
+                verifier,
+                symbol=symbol,
+                timeframe=item.timeframe,
+                year=year,
+                debug=debug,
+                model=model,
+                version=version,
+            )
+            if result is None:
+                continue
+            if result.status == "failed":
+                _report_task_failure(result)
+            results.append(result)
+    return tuple(results)
+
+
+def _verify_partition(
+    repository: SignalRepository,
+    verifier: SignalVerifier,
+    *,
+    symbol: Symbol,
+    timeframe: Timeframe,
+    year: int,
+    debug: bool,
+    model: str | None,
+    version: str | None,
+) -> SignalTaskResult | None:
+    """Verify one signal year partition synchronously.
+
+    Returns:
+        A task result, or ``None`` when model/version filters exclude every
+        row in the partition.
+    """
+    try:
+        frame = repository.load(
+            exchange=_EXCHANGE,
+            market=_MARKET,
+            symbol=symbol,
+            timeframe=timeframe,
+            year=year,
+        )
+        filtered = _apply_identity_filters(frame, model=model, version=version)
+        if filtered.height == 0:
+            return None
+        report = verifier.verify(filtered)
+    except Exception as exc:
+        _log_partition_failure(
+            symbol=symbol,
+            timeframe=timeframe,
+            year=year,
+            exc=exc,
+            debug=debug,
+        )
+        return SignalTaskResult(
+            symbol=symbol,
+            timeframe=timeframe,
+            year=year,
+            status="failed",
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+            error_code=exc.error_code if isinstance(exc, CQROSError) else None,
+        )
+
+    return SignalTaskResult(
+        symbol=symbol,
+        timeframe=timeframe,
+        year=year,
+        status="succeeded",
+        report=report,
+    )
+
+
+def _apply_identity_filters(
+    frame: pl.DataFrame,
+    *,
+    model: str | None,
+    version: str | None,
+) -> pl.DataFrame:
+    """Restrict ``frame`` to optional model/version identity filters."""
+    filtered = frame
+    if model is not None and _COL_MODEL_NAME in filtered.columns:
+        filtered = filtered.filter(pl.col(_COL_MODEL_NAME) == model)
+    if version is not None and _COL_MODEL_VERSION in filtered.columns:
+        filtered = filtered.filter(pl.col(_COL_MODEL_VERSION) == version)
+    return filtered
+
+
+def _report_task_failure(result: SignalTaskResult) -> None:
+    """Print structured diagnostics for a failed verification task."""
+    message = result.error_message if result.error_message is not None else ""
+    exception_type = result.error_type if result.error_type is not None else "Exception"
+    print(
+        format_partition_failure(
+            dataset=_DATASET_DISPLAY_NAME,
+            symbol=result.symbol,
+            timeframe=result.timeframe,
+            partition=_partition_label(result.year),
+            verifier=_VERIFIER_NAME,
+            exception_type=exception_type,
+            message=message,
+            code=result.error_code,
+        ),
+        end="",
+        flush=True,
+    )
+
+
+def _log_partition_failure(
+    *,
+    symbol: Symbol,
+    timeframe: Timeframe,
+    year: int,
+    exc: BaseException,
+    debug: bool,
+) -> None:
+    """Log a partition verification failure without aborting the run."""
+    log_extra = {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "year": year,
+        "verifier": _VERIFIER_NAME,
+        "error_type": type(exc).__name__,
+        "error_message": str(exc),
+        "error_code": exc.error_code if isinstance(exc, CQROSError) else None,
+    }
+    if debug:
+        _logger.exception(
+            "Failed signal partition verification; continuing",
+            extra=log_extra,
+            exc_info=True,
+        )
+    else:
+        _logger.warning(
+            "Failed signal partition verification; continuing",
+            extra=log_extra,
+        )
+
+
+def _build_summary(
+    *,
+    results: Sequence[SignalTaskResult],
+    duration_seconds: float,
+) -> VerifySignalSummary:
+    """Aggregate task results into a verification report."""
+    symbols_verified: set[Symbol] = set()
+    timeframes_verified: set[Timeframe] = set()
+    successful_tasks = 0
+    failed_tasks = 0
+    rows_checked = 0
+    duplicate_timestamps = 0
+    null_rows = 0
+    nan_rows = 0
+    invalid_timestamps = 0
+    invalid_signal_rows = 0
+    warnings = 0
+
+    for result in results:
+        symbols_verified.add(result.symbol)
+        timeframes_verified.add(result.timeframe)
+        if result.status == "succeeded":
+            successful_tasks += 1
+            report = result.report
+            if report is not None:
+                rows_checked += report.rows_checked
+                duplicate_timestamps += report.duplicate_timestamp_rows
+                null_rows += report.null_rows
+                nan_rows += report.nan_rows
+                invalid_timestamps += report.invalid_timestamp_rows
+                invalid_signal_rows += report.invalid_numeric_rows
+                warnings += len(report.warnings)
+        else:
+            failed_tasks += 1
+
+    repository_passed = (
+        failed_tasks == 0
+        and duplicate_timestamps == 0
+        and null_rows == 0
+        and nan_rows == 0
+        and invalid_timestamps == 0
+        and invalid_signal_rows == 0
+        and warnings == 0
+    )
+
+    datasets_verified = 1 if results else 0
+    return VerifySignalSummary(
+        symbols_verified=len(symbols_verified),
+        datasets_verified=datasets_verified,
+        timeframes_verified=len(timeframes_verified),
+        successful_tasks=successful_tasks,
+        failed_tasks=failed_tasks,
+        rows_checked=rows_checked,
+        duplicate_timestamps=duplicate_timestamps,
+        null_rows=null_rows,
+        nan_rows=nan_rows,
+        invalid_timestamps=invalid_timestamps,
+        invalid_signal_rows=invalid_signal_rows,
+        warnings=warnings,
+        duration_seconds=duration_seconds,
+        repository_passed=repository_passed,
+    )
+
+
+def _partition_label(year: int) -> str:
+    """Return the partition filename identifier for a calendar year."""
+    return f"{year}.parquet"
+
+
+def _format_duration(duration_seconds: float) -> str:
+    """Format duration seconds for the summary report."""
+    return f"{duration_seconds:.3f}s"
+
+
+if __name__ == "__main__":
+    raise SystemExit(asyncio.run(main()))

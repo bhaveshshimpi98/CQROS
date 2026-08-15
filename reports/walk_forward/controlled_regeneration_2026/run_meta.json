@@ -1,0 +1,47 @@
+﻿{
+    "started_utc":  "2026-08-14T11:07:15.4431053Z",
+    "ended_utc":  "2026-08-14T11:10:57.5907579Z",
+    "duration_seconds":  222.153,
+    "exit_code":  99,
+    "stopped_early":  true,
+    "stop_reason":  "memory_stop_4h",
+    "workers":  1,
+    "engine":  "simple (CLI default, flag omitted)",
+    "overwrite":  true,
+    "storage_root":  "data",
+    "timeframes_planned":  [
+                               "1d",
+                               "4h",
+                               "1h",
+                               "15m",
+                               "5m"
+                           ],
+    "memory_stop_private_mb":  3200,
+    "pythonunbuffered":  true,
+    "error_action_preference":  "Continue",
+    "note":  "PYTHONUNBUFFERED=1 is wrapper logging only. Stdout/stderr redirected to files. Native exit code from LASTEXITCODE. ErrorActionPreference is not Stop.",
+    "partitions":  [
+                       {
+                           "timeframe":  "1d",
+                           "started_utc":  "2026-08-14T11:07:17.4052809Z",
+                           "ended_utc":  "2026-08-14T11:09:43.3230287Z",
+                           "duration_seconds":  145.917,
+                           "exit_code":  0,
+                           "command":  "uv run python -m cqros.cli.generate_walk_forward --manager default --timeframes 1d --years 2026 --overwrite --workers 1 --storage-root data --verbose",
+                           "stdout_log":  "D:\\bss\\CQROS\\reports\\walk_forward\\controlled_regeneration_2026\\logs\\generate_walk_forward_1d_stdout.log",
+                           "stderr_log":  "D:\\bss\\CQROS\\reports\\walk_forward\\controlled_regeneration_2026\\logs\\generate_walk_forward_1d_stderr.log",
+                           "memory_stop":  false
+                       },
+                       {
+                           "timeframe":  "4h",
+                           "started_utc":  "2026-08-14T11:09:45.8138474Z",
+                           "ended_utc":  "2026-08-14T11:10:57.4417807Z",
+                           "duration_seconds":  71.627,
+                           "exit_code":  99,
+                           "command":  "uv run python -m cqros.cli.generate_walk_forward --manager default --timeframes 4h --years 2026 --overwrite --workers 1 --storage-root data --verbose",
+                           "stdout_log":  "D:\\bss\\CQROS\\reports\\walk_forward\\controlled_regeneration_2026\\logs\\generate_walk_forward_4h_stdout.log",
+                           "stderr_log":  "D:\\bss\\CQROS\\reports\\walk_forward\\controlled_regeneration_2026\\logs\\generate_walk_forward_4h_stderr.log",
+                           "memory_stop":  true
+                       }
+                   ]
+}

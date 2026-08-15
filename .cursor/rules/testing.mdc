@@ -1,0 +1,751 @@
+---
+description: Testing, validation, quality assurance, and reproducibility standards for CQROS
+globs: ["src/**/*.py", "tests/**/*.py"]
+alwaysApply: true
+---
+
+# CQROS Testing Standards
+
+## Mission
+
+Testing is mandatory.
+
+No implementation is considered complete until it is tested.
+
+Testing verifies
+
+Correctness
+
+Determinism
+
+Reproducibility
+
+Performance
+
+Reliability
+
+Safety
+
+Architecture compliance
+
+Testing is part of implementation.
+
+Never treat it as optional.
+
+---
+
+# Testing Philosophy
+
+CQROS follows
+
+Test First Thinking
+
+Every feature should have tests before production approval.
+
+Every bug must produce a regression test.
+
+Every critical component must be independently verifiable.
+
+---
+
+# Test Pyramid
+
+The required testing hierarchy is
+
+Unit Tests
+
+↓
+
+Integration Tests
+
+↓
+
+System Tests
+
+↓
+
+End-to-End Tests
+
+↓
+
+Research Validation
+
+↓
+
+Production Verification
+
+Unit tests should represent the majority of tests.
+
+---
+
+# Directory Structure
+
+tests/
+
+    unit/
+
+    integration/
+
+    system/
+
+    e2e/
+
+    regression/
+
+    datasets/
+
+    models/
+
+    execution/
+
+    performance/
+
+    fixtures/
+
+---
+
+# Unit Tests
+
+Every public function requires unit tests.
+
+Verify
+
+Normal behavior
+
+Edge cases
+
+Failure conditions
+
+Boundary values
+
+Invalid inputs
+
+Unit tests should not
+
+Use network
+
+Use exchange APIs
+
+Depend on external services
+
+Depend on production datasets
+
+---
+
+# Integration Tests
+
+Integration tests verify interaction between modules.
+
+Examples
+
+Dataset Builder + Validation
+
+Feature Engineering + Targets
+
+Portfolio + Risk
+
+Execution + Exchange Adapter
+
+Metadata + Lineage
+
+Integration tests may use temporary resources.
+
+---
+
+# End-to-End Tests
+
+E2E tests verify complete workflows.
+
+Examples
+
+Historical Data
+
+↓
+
+Validation
+
+↓
+
+Research Dataset
+
+↓
+
+Feature Engineering
+
+↓
+
+Target Generation
+
+↓
+
+Model
+
+↓
+
+Alpha
+
+↓
+
+Portfolio
+
+↓
+
+Execution Simulation
+
+The entire workflow must complete successfully.
+
+---
+
+# Regression Tests
+
+Every bug requires
+
+A regression test.
+
+The bug must never reappear.
+
+Regression tests remain permanently.
+
+---
+
+# Reproducibility Tests
+
+Research must be reproducible.
+
+Repeated execution should produce
+
+Identical datasets
+
+Identical features
+
+Identical targets
+
+Identical statistics
+
+Identical model outputs
+
+Identical reports
+
+when inputs are unchanged.
+
+---
+
+# Data Validation Tests
+
+Verify
+
+Missing values
+
+Duplicate rows
+
+Schema correctness
+
+Timestamp ordering
+
+Timezone correctness
+
+Price validity
+
+Volume validity
+
+Funding consistency
+
+Order book consistency
+
+Liquidation consistency
+
+Dataset hashes
+
+---
+
+# Feature Tests
+
+Verify
+
+No future leakage
+
+Expected ranges
+
+Missing value handling
+
+Normalization
+
+Window correctness
+
+Timestamp alignment
+
+Feature version
+
+Metadata generation
+
+---
+
+# Target Tests
+
+Verify
+
+Forward return calculations
+
+Label correctness
+
+Window alignment
+
+Future timestamps
+
+Boundary handling
+
+Incomplete windows
+
+Risk-adjusted targets
+
+Overlapping horizon rules
+
+---
+
+# Leakage Tests
+
+Every research dataset requires leakage tests.
+
+Verify
+
+Future timestamps
+
+Target leakage
+
+Feature leakage
+
+Label leakage
+
+Window leakage
+
+Metadata leakage
+
+No dataset proceeds if leakage exists.
+
+---
+
+# Statistical Tests
+
+Verify
+
+Information Coefficient
+
+Rank IC
+
+Sharpe
+
+Sortino
+
+Newey-West
+
+Effective Sample Size
+
+Trade count
+
+Bootstrap confidence
+
+Statistical assumptions
+
+Statistical outputs should be deterministic.
+
+---
+
+# Machine Learning Tests
+
+Verify
+
+Training
+
+Validation
+
+Inference
+
+Serialization
+
+Deserialization
+
+Prediction stability
+
+Feature importance generation
+
+Model metadata
+
+Random seed control
+
+---
+
+# Alpha Tests
+
+Verify
+
+Alpha generation
+
+Confidence calculation
+
+Prediction uncertainty
+
+Scaling
+
+Normalization
+
+Output ranges
+
+Missing predictions
+
+Fallback behavior
+
+---
+
+# Portfolio Tests
+
+Verify
+
+Position sizing
+
+Risk budgeting
+
+Volatility targeting
+
+Exposure limits
+
+Sector concentration
+
+Leverage
+
+Cash management
+
+Allocation constraints
+
+---
+
+# Execution Tests
+
+Verify
+
+Order generation
+
+Position transitions
+
+Risk checks
+
+Order rejection
+
+Exchange formatting
+
+Retry logic
+
+Partial fills
+
+Timeout handling
+
+---
+
+# Backtesting Tests
+
+Verify
+
+No future leakage
+
+Walk-forward correctness
+
+Transaction costs
+
+Funding
+
+Slippage
+
+Capacity
+
+Execution timing
+
+Portfolio accounting
+
+Performance statistics
+
+---
+
+# Metadata Tests
+
+Every artifact must contain
+
+Version
+
+Timestamp
+
+Hash
+
+Configuration
+
+Lineage
+
+Creator
+
+Dependencies
+
+Metadata should be validated automatically.
+
+---
+
+# Configuration Tests
+
+Verify
+
+Schema
+
+Required fields
+
+Defaults
+
+Version compatibility
+
+Migration
+
+Validation
+
+Fail-fast behavior
+
+---
+
+# Performance Tests
+
+Benchmark
+
+Dataset loading
+
+Feature engineering
+
+Research dataset generation
+
+Model inference
+
+Portfolio construction
+
+Execution simulation
+
+Backtesting
+
+Performance regressions should be reported.
+
+---
+
+# Memory Tests
+
+Large datasets should not exceed memory budgets.
+
+Test
+
+Streaming
+
+Chunking
+
+Lazy evaluation
+
+Garbage collection
+
+Resource cleanup
+
+---
+
+# Exception Tests
+
+Verify
+
+Expected exceptions
+
+Meaningful error messages
+
+Failure recovery
+
+Context preservation
+
+Never silently ignore exceptions.
+
+---
+
+# Logging Tests
+
+Verify important events are logged.
+
+Do not log
+
+Secrets
+
+Credentials
+
+Private keys
+
+API tokens
+
+---
+
+# Security Tests
+
+Verify
+
+Secret handling
+
+Access control
+
+Configuration validation
+
+Unsafe file access
+
+Unauthorized operations
+
+---
+
+# Determinism
+
+Repeated execution with identical inputs should produce identical outputs.
+
+Random seeds must be controlled.
+
+System time should never influence research results.
+
+---
+
+# Mocking
+
+Mock
+
+REST APIs
+
+WebSockets
+
+Exchange responses
+
+Filesystem
+
+Clock
+
+Network latency
+
+Third-party services
+
+Avoid mocking internal business logic.
+
+---
+
+# Test Data
+
+Use
+
+Synthetic datasets
+
+Known datasets
+
+Deterministic fixtures
+
+Versioned fixtures
+
+Avoid production data in tests.
+
+---
+
+# Coverage
+
+Minimum project coverage
+
+95%
+
+Critical modules
+
+100%
+
+Critical modules include
+
+Risk
+
+Portfolio
+
+Execution
+
+Validation
+
+Governance
+
+Configuration
+
+Research Dataset Builder
+
+Leakage Detection
+
+---
+
+# Continuous Integration
+
+Every Pull Request must execute
+
+Formatting
+
+Linting
+
+Type checking
+
+Unit tests
+
+Integration tests
+
+Coverage
+
+No merge if any stage fails.
+
+---
+
+# AI Rules
+
+Whenever implementing code
+
+Always implement corresponding tests.
+
+Never submit untested functionality.
+
+Never skip edge cases.
+
+Never reduce coverage.
+
+---
+
+# Completion Checklist
+
+Implementation is complete only if
+
+✓ Unit tests pass
+
+✓ Integration tests pass
+
+✓ Regression tests pass
+
+✓ Coverage target met
+
+✓ Type checking passes
+
+✓ Formatting passes
+
+✓ Linting passes
+
+✓ Performance acceptable
+
+✓ Deterministic behavior verified
+
+✓ Documentation updated
+
+Otherwise implementation is incomplete.
+
+---
+
+# CQROS Quality Principles
+
+Testing before deployment.
+
+Evidence before assumptions.
+
+Determinism before optimization.
+
+Regression protection before new features.
+
+Quality before speed.
+
+Institutional reliability over rapid implementation.
+
+These principles override development convenience.

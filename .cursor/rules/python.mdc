@@ -1,0 +1,647 @@
+---
+description: Python ecosystem, package usage, and implementation standards for CQROS
+globs: ["src/**/*.py", "tests/**/*.py"]
+alwaysApply: true
+---
+
+# CQROS Python Standards
+
+## Mission
+
+CQROS is built using modern Python 3.13.
+
+Only approved libraries and language features may be used.
+
+Favor readability, maintainability, reproducibility, and deterministic behavior over clever implementations.
+
+---
+
+# Python Version
+
+Target Version
+
+Python 3.13
+
+Always use modern Python syntax.
+
+Prefer
+
+match/case
+
+pathlib
+
+dataclasses
+
+Enum
+
+Protocol
+
+TypedDict
+
+slots
+
+context managers
+
+Never write legacy compatibility code.
+
+---
+
+# Approved Core Libraries
+
+Standard Library
+
+pathlib
+
+logging
+
+typing
+
+dataclasses
+
+enum
+
+abc
+
+contextlib
+
+datetime
+
+zoneinfo
+
+uuid
+
+hashlib
+
+json
+
+csv
+
+sqlite3
+
+collections
+
+itertools
+
+functools
+
+statistics
+
+math
+
+heapq
+
+bisect
+
+asyncio
+
+concurrent.futures
+
+threading (only when justified)
+
+multiprocessing (only when justified)
+
+---
+
+# Approved Data Libraries
+
+Polars
+
+Primary dataframe library.
+
+Use for
+
+ETL
+
+Research datasets
+
+Feature engineering
+
+Aggregations
+
+Filtering
+
+Joining
+
+Grouping
+
+Rolling calculations
+
+Never use Pandas unless explicitly approved.
+
+DuckDB
+
+Primary analytical database.
+
+Use for
+
+Large joins
+
+Research datasets
+
+Fast SQL analytics
+
+Parquet querying
+
+PyArrow
+
+Primary storage format.
+
+Used for
+
+Parquet
+
+Schema handling
+
+Dataset interoperability
+
+---
+
+# Approved Numerical Libraries
+
+NumPy
+
+Numerical arrays
+
+Linear algebra
+
+Matrix operations
+
+Random generators
+
+SciPy
+
+Optimization
+
+Statistics
+
+Interpolation
+
+Signal processing
+
+Statsmodels
+
+Econometrics
+
+Regression
+
+Statistical tests
+
+Newey-West
+
+Time-series statistics
+
+---
+
+# Approved Machine Learning
+
+Scikit-learn
+
+Traditional ML
+
+Preprocessing
+
+Pipelines
+
+Cross validation
+
+Metrics
+
+LightGBM
+
+Gradient boosting
+
+Tree models
+
+XGBoost
+
+Boosted trees
+
+CatBoost
+
+Categorical boosting
+
+PyTorch
+
+Deep learning
+
+Neural networks
+
+Sequence models
+
+Transformers
+
+Custom architectures
+
+Optuna
+
+Hyperparameter optimization
+
+Never use TensorFlow unless explicitly approved.
+
+---
+
+# Optimization
+
+CVXPY
+
+Portfolio optimization
+
+Risk budgeting
+
+Convex optimization
+
+OSQP
+
+If required by CVXPY.
+
+---
+
+# Networking
+
+HTTPX
+
+REST APIs
+
+Async requests
+
+WebSockets
+
+Realtime exchange feeds
+
+Never use requests.
+
+---
+
+# Storage
+
+Parquet
+
+Default dataset format.
+
+JSON
+
+Configuration
+
+Metadata
+
+YAML
+
+Configuration
+
+Policies
+
+SQLite
+
+Local metadata
+
+DuckDB
+
+Research datasets
+
+---
+
+# Visualization
+
+Plotly
+
+Interactive charts
+
+Matplotlib
+
+Static charts
+
+Never use Seaborn.
+
+---
+
+# Testing
+
+pytest
+
+pytest-cov
+
+unittest.mock
+
+hypothesis (future)
+
+---
+
+# Formatting
+
+Black
+
+Ruff
+
+isort
+
+Pyright
+
+Mandatory.
+
+---
+
+# Forbidden Libraries
+
+Pandas
+
+Unless explicitly approved.
+
+Requests
+
+Use HTTPX.
+
+TensorFlow
+
+Unless approved.
+
+Keras
+
+Unless approved.
+
+OpenCV
+
+Not required.
+
+SQLAlchemy
+
+Use DuckDB and lightweight storage.
+
+---
+
+# Project Layout
+
+Use src layout.
+
+Example
+
+src/
+
+    cqros/
+
+        core/
+
+        data/
+
+        exchange/
+
+        research/
+
+        ...
+
+Never place production code outside src/cqros.
+
+---
+
+# Imports
+
+Always use absolute imports.
+
+Correct
+
+from cqros.core.logging import get_logger
+
+Incorrect
+
+from ..core.logging import get_logger
+
+Avoid relative imports.
+
+---
+
+# Package Structure
+
+Every package contains
+
+__init__.py
+
+Public API
+
+Private modules begin with underscore when appropriate.
+
+---
+
+# Path Handling
+
+Always use pathlib.Path.
+
+Never concatenate paths manually.
+
+Correct
+
+DATA_DIR / "btc.parquet"
+
+Incorrect
+
+DATA_DIR + "/btc.parquet"
+
+---
+
+# Configuration
+
+Read configuration through CQROS configuration system.
+
+Never read YAML directly inside business logic.
+
+Never hardcode paths.
+
+Never hardcode exchange URLs.
+
+Never hardcode thresholds.
+
+---
+
+# Time
+
+Timezone aware only.
+
+UTC only.
+
+Never use naive datetime objects.
+
+Exchange timestamps converted immediately to UTC.
+
+---
+
+# Randomness
+
+Always control random seeds.
+
+Record seed in metadata.
+
+Research must be reproducible.
+
+---
+
+# Serialization
+
+Use
+
+Parquet
+
+JSON
+
+YAML
+
+Avoid Pickle unless explicitly required.
+
+If Pickle is used,
+
+record version,
+
+hash,
+
+and compatibility.
+
+---
+
+# Concurrency
+
+Use async only for
+
+REST
+
+WebSockets
+
+Network IO
+
+Disk IO
+
+Use multiprocessing for CPU-intensive workloads when justified.
+
+Avoid unnecessary threading.
+
+---
+
+# Memory
+
+Avoid unnecessary dataframe copies.
+
+Prefer lazy evaluation in Polars.
+
+Stream large datasets where possible.
+
+Avoid loading unnecessary columns.
+
+---
+
+# Performance
+
+Profile before optimization.
+
+Prefer vectorized operations.
+
+Avoid Python loops over dataframe rows.
+
+Batch expensive operations.
+
+---
+
+# Error Handling
+
+Raise CQROS exceptions.
+
+Wrap third-party exceptions when crossing package boundaries.
+
+Never silently ignore failures.
+
+---
+
+# Logging
+
+Every package uses CQROS logging.
+
+Never print().
+
+Log
+
+startup
+
+shutdown
+
+warnings
+
+errors
+
+major state changes
+
+Never log secrets.
+
+---
+
+# Documentation
+
+Every module includes
+
+Purpose
+
+Responsibilities
+
+Dependencies
+
+Public API
+
+Examples when appropriate.
+
+---
+
+# Testing Requirements
+
+Every public function
+
+Unit test
+
+Edge case tests
+
+Failure tests
+
+Type checking
+
+Coverage target
+
+95%+
+
+---
+
+# AI Rules
+
+When generating code
+
+Use approved libraries only.
+
+Do not introduce new dependencies.
+
+Do not rewrite architecture.
+
+Do not move packages.
+
+If requirements are unclear,
+
+stop and request clarification.
+
+Never guess.
+
+---
+
+# Completion Checklist
+
+Before implementation is complete
+
+✓ Black passes
+
+✓ Ruff passes
+
+✓ Pyright passes
+
+✓ pytest passes
+
+✓ Type hints complete
+
+✓ Documentation complete
+
+✓ Logging included
+
+✓ Configuration supported
+
+✓ Architecture respected
+
+Only then is the task complete.

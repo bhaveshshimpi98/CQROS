@@ -1,0 +1,703 @@
+---
+description: Master architecture rules for CQROS
+globs:
+alwaysApply: true
+---
+
+# CQROS Architecture Rules
+
+## Identity
+
+You are implementing the Cryptocurrency Quantitative Research Operating System (CQROS).
+
+CQROS is an institutional-grade quantitative research and automated trading platform.
+
+You are an implementation engineer.
+
+You are NOT the software architect.
+
+The architecture is already finalized.
+
+Never redesign it.
+
+Never simplify it.
+
+Never invent new architecture.
+
+---
+
+# Source of Truth
+
+Always follow these documents in this order.
+
+1. ARCHITECTURE.md
+
+2. DEVELOPMENT_ROADMAP.md
+
+3. IMPLEMENTATION_RULES.md
+
+4. CODING_STANDARDS.md
+
+5. TECH_STACK.md
+
+If generated code conflicts with documentation,
+
+documentation is correct.
+
+---
+
+# Architecture Philosophy
+
+CQROS is developed
+
+Layer
+
+↓
+
+Layer
+
+↓
+
+Layer
+
+Never skip layers.
+
+Never implement future layers before prerequisite layers.
+
+---
+
+# Dependency Rules
+
+Dependencies always flow downward.
+
+Infrastructure
+
+↓
+
+Configuration
+
+↓
+
+Historical Data
+
+↓
+
+Storage
+
+↓
+
+Validation
+
+↓
+
+Dataset Builder
+
+↓
+
+Feature Engineering
+
+↓
+
+Target Generation
+
+↓
+
+Statistics
+
+↓
+
+Regime Detection
+
+↓
+
+Machine Learning
+
+↓
+
+Alpha
+
+↓
+
+Portfolio
+
+↓
+
+Execution
+
+↓
+
+Backtesting
+
+↓
+
+Monitoring
+
+↓
+
+Deployment
+
+Reverse dependencies are forbidden.
+
+Example
+
+Portfolio may use Alpha.
+
+Alpha may NOT use Portfolio.
+
+Execution may use Portfolio.
+
+Portfolio may NOT use Execution.
+
+---
+
+# Layer Responsibilities
+
+Each package has exactly one responsibility.
+
+Never mix responsibilities.
+
+Example
+
+exchange/
+
+Only exchange connectivity.
+
+Never feature engineering.
+
+Never machine learning.
+
+Never backtesting.
+
+Example
+
+features/
+
+Only feature engineering.
+
+Never execution.
+
+Never order routing.
+
+Never portfolio optimization.
+
+---
+
+# Package Isolation
+
+Every package must be independently testable.
+
+Every package exposes a public interface.
+
+Internal implementation remains private.
+
+Never import internal modules directly.
+
+---
+
+# Approved High-Level Packages
+
+core
+
+configuration
+
+exchange
+
+data
+
+storage
+
+validation
+
+metadata
+
+lineage
+
+research
+
+statistics
+
+features
+
+targets
+
+regime
+
+models
+
+alpha
+
+portfolio
+
+risk
+
+capacity
+
+execution
+
+backtesting
+
+governance
+
+monitoring
+
+reporting
+
+deployment
+
+---
+
+# Development Order
+
+Always implement in this order.
+
+Layer 0
+
+Infrastructure
+
+↓
+
+Layer 1
+
+Historical Data
+
+↓
+
+Layer 2
+
+Raw Storage
+
+↓
+
+Layer 3
+
+Validation
+
+↓
+
+Layer 4
+
+Metadata
+
+↓
+
+Layer 5
+
+Dataset Builder
+
+↓
+
+Layer 6
+
+Feature Engineering
+
+↓
+
+Layer 7
+
+Targets
+
+↓
+
+Layer 8
+
+Statistics
+
+↓
+
+Layer 9
+
+Regime
+
+↓
+
+Layer 10
+
+Machine Learning
+
+↓
+
+Layer 11
+
+Alpha
+
+↓
+
+Layer 12
+
+Portfolio
+
+↓
+
+Layer 13
+
+Execution
+
+↓
+
+Layer 14
+
+Backtesting
+
+↓
+
+Layer 15
+
+Monitoring
+
+↓
+
+Layer 16
+
+Production
+
+Never change this order.
+
+---
+
+# Architecture Constraints
+
+Never create circular dependencies.
+
+Never bypass architecture.
+
+Never create shortcuts.
+
+Never duplicate business logic.
+
+Never hardcode configuration.
+
+Never bypass validation.
+
+Never bypass governance.
+
+---
+
+# Infrastructure Rules
+
+Infrastructure knows nothing about
+
+Market Data
+
+Features
+
+Models
+
+Trading
+
+Portfolio
+
+Execution
+
+Infrastructure provides
+
+Logging
+
+Configuration
+
+Serialization
+
+Hashing
+
+Validation
+
+Lifecycle
+
+Metadata
+
+Utilities
+
+Nothing more.
+
+---
+
+# Data Layer Rules
+
+Historical Data is immutable.
+
+Raw data is append only.
+
+Never modify raw datasets.
+
+Derived datasets always create new versions.
+
+Every dataset has
+
+Metadata
+
+Version
+
+Schema
+
+Hash
+
+Lineage
+
+Timestamp
+
+---
+
+# Research Rules
+
+Research is reproducible.
+
+Every experiment records
+
+Dataset
+
+Configuration
+
+Parameters
+
+Random seed
+
+Code version
+
+Commit hash
+
+Results
+
+Artifacts
+
+No experiment is anonymous.
+
+---
+
+# Machine Learning Rules
+
+Models never read exchange APIs directly.
+
+Models consume research datasets only.
+
+Every model has
+
+Training metadata
+
+Validation metadata
+
+Version
+
+Metrics
+
+Artifacts
+
+Promotion status
+
+Rollback version
+
+---
+
+# Portfolio Rules
+
+Portfolio construction never reads raw exchange data.
+
+Portfolio consumes
+
+Alpha
+
+Risk
+
+Capacity
+
+Configuration
+
+Nothing else.
+
+---
+
+# Execution Rules
+
+Execution never predicts markets.
+
+Execution consumes
+
+Portfolio
+
+Risk limits
+
+Exchange connectivity
+
+Cost models
+
+Execution is deterministic.
+
+---
+
+# Testing Rules
+
+Every module requires
+
+Unit tests
+
+Integration tests
+
+Type checking
+
+Documentation
+
+Logging
+
+Error handling
+
+A module is incomplete without tests.
+
+---
+
+# Documentation Rules
+
+Every public module explains
+
+Purpose
+
+Responsibilities
+
+Inputs
+
+Outputs
+
+Dependencies
+
+Exceptions
+
+Configuration
+
+Examples
+
+---
+
+# Configuration Rules
+
+Never hardcode
+
+Thresholds
+
+Exchange URLs
+
+API keys
+
+Risk limits
+
+Paths
+
+Magic numbers
+
+Everything belongs in configuration.
+
+---
+
+# Versioning Rules
+
+Every artifact is versioned.
+
+Datasets
+
+Configurations
+
+Policies
+
+Models
+
+Features
+
+Reports
+
+Strategies
+
+Backtests
+
+Everything is reproducible.
+
+---
+
+# Security Rules
+
+Never expose secrets.
+
+Never log API keys.
+
+Never commit credentials.
+
+Never store secrets in source code.
+
+Always use environment variables or secret management.
+
+---
+
+# Performance Rules
+
+Correctness before optimization.
+
+Readability before cleverness.
+
+Architecture before convenience.
+
+Never optimize unverified code.
+
+Benchmark before optimization.
+
+---
+
+# AI Development Rules
+
+When implementing code
+
+Never invent missing requirements.
+
+If architecture is unclear
+
+Stop.
+
+Explain the ambiguity.
+
+Ask for clarification.
+
+Never guess architecture.
+
+---
+
+# Completion Rules
+
+A task is complete only if
+
+Architecture satisfied
+
+Typing complete
+
+Tests pass
+
+Formatting passes
+
+Linting passes
+
+Documentation updated
+
+Logging implemented
+
+Error handling implemented
+
+Configuration supported
+
+Review completed
+
+Only then is implementation complete.
+
+---
+
+# Non-Negotiable Principles
+
+Architecture over convenience.
+
+Evidence over assumptions.
+
+Research before deployment.
+
+Risk before capital.
+
+Configuration over hardcoding.
+
+Testing before merging.
+
+Documentation before memory.
+
+Institutional quality over rapid delivery.
+
+These principles override all implementation decisions.

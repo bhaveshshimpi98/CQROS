@@ -1,0 +1,267 @@
+{
+  "timestamp_utc": "2026-08-14T11:14:48.478503+00:00",
+  "verdict": "FAIL",
+  "reason": "4h Walk Forward regeneration stopped at 3464.47 MB python private memory (host-protection threshold 3200 MB) while loading Factors/Labels. 1h/15m/5m not started. 1d completed. No production-code change. No retry.",
+  "hashes": {
+    "factor_selection": {
+      "1d": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/1d/2026.parquet",
+        "exists": true,
+        "bytes": 11915,
+        "mtime_utc": "2026-08-14T05:41:28+00:00",
+        "sha256": "B6CE50C27CAE6601FC0CED1CB650475BF471C337211D5C89D98B1FEB8432A2BB"
+      },
+      "4h": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/4h/2026.parquet",
+        "exists": true,
+        "bytes": 11827,
+        "mtime_utc": "2026-08-14T10:03:18+00:00",
+        "sha256": "BAE924AA39D5DDA300030052B5C69A55DA94DC230A30931ECFDE911BD1592918"
+      },
+      "1h": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/1h/2026.parquet",
+        "exists": true,
+        "bytes": 11816,
+        "mtime_utc": "2026-08-14T08:52:20+00:00",
+        "sha256": "89F17D02C7A4B6314A785DC8783836F88B233F9F04A83AD76D94E3AFEEC10022"
+      },
+      "15m": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/15m/2026.parquet",
+        "exists": true,
+        "bytes": 11813,
+        "mtime_utc": "2026-08-14T05:18:54+00:00",
+        "sha256": "898A40F41AF52452DB3D170C667DD6A2678CB7B9317C7A2D48CC7518DBE12788"
+      },
+      "5m": {
+        "path": "data/factor_selection/default/binance/usdt_perpetual/5m/2026.parquet",
+        "exists": true,
+        "bytes": 11812,
+        "mtime_utc": "2026-08-14T10:12:20+00:00",
+        "sha256": "1C80C6679DAA8133CED64C9D7978F02E4E9742CEBEECECB4DA4289F569F97FB0"
+      }
+    },
+    "walk_forward": {
+      "1d": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/1d/2026.parquet",
+        "exists": true,
+        "bytes": 185255,
+        "mtime_utc": "2026-08-14T11:09:42+00:00",
+        "sha256": "B2391EE4ECBCD89E145015A488789415C410F6A5C050A818192EAEB7DFE58469"
+      },
+      "4h": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/4h/2026.parquet",
+        "exists": true,
+        "bytes": 141704,
+        "mtime_utc": "2026-08-11T10:38:14+00:00",
+        "sha256": "888C4613FA4D3DD8D3345AF9F134D13DCAC2EF35641C073234EAB68E19C01C8F"
+      },
+      "1h": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/1h/2026.parquet",
+        "exists": true,
+        "bytes": 470948,
+        "mtime_utc": "2026-08-11T10:34:44+00:00",
+        "sha256": "735E0D62872F436A2BFA9A6A84E9EC5CBC4602703C5C7B43A4CA2462F2476373"
+      },
+      "15m": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/15m/2026.parquet",
+        "exists": true,
+        "bytes": 226656,
+        "mtime_utc": "2026-08-11T10:27:42+00:00",
+        "sha256": "97A8BA631707E8E74FBD13BC1577D5AE9EB9156A3F223B6D1D7F4D3882A73806"
+      },
+      "5m": {
+        "path": "data/walk_forward/default/binance/usdt_perpetual/5m/2026.parquet",
+        "exists": true,
+        "bytes": 390938,
+        "mtime_utc": "2026-08-11T10:24:40+00:00",
+        "sha256": "937C16B8A98BF5C0C7F95CEA80A9A8B2EAA6EE2828423298951057995730E22D"
+      }
+    },
+    "factor_validation": {
+      "1d": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/1d/2026.parquet",
+        "exists": true,
+        "bytes": 13281,
+        "mtime_utc": "2026-08-12T15:52:14+00:00",
+        "sha256": "B7935E021B31BAD5BE9017577FCD49243A1E022480A47F44A5B6D5D2C4058137"
+      },
+      "4h": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/4h/2026.parquet",
+        "exists": true,
+        "bytes": 14365,
+        "mtime_utc": "2026-08-12T15:58:50+00:00",
+        "sha256": "E49A86299CD989A8B1F5B91ABF90E92647993250A71351391EA2F9752F481EED"
+      },
+      "1h": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/1h/2026.parquet",
+        "exists": true,
+        "bytes": 14444,
+        "mtime_utc": "2026-08-12T16:16:00+00:00",
+        "sha256": "315EF539F46E94A7B28AB902D98E88D4B79EB7BD666687E5FCED6FF1B7C3CC30"
+      },
+      "15m": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/15m/2026.parquet",
+        "exists": true,
+        "bytes": 14425,
+        "mtime_utc": "2026-08-12T16:19:54+00:00",
+        "sha256": "57FEF604E3F24DA6FBEEC836D5ADCB2979452DAA906A5C60639DA89CCAC38CB2"
+      },
+      "5m": {
+        "path": "data/factor_validation/default/binance/usdt_perpetual/5m/2026.parquet",
+        "exists": true,
+        "bytes": 14455,
+        "mtime_utc": "2026-08-12T16:26:00+00:00",
+        "sha256": "7F81C68E92FD51058DA13F54CDBA3E8F2981357F69D7F4E75A7FFB9474DA213D"
+      }
+    },
+    "purged_cv": {
+      "1d": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/1d/2026.parquet",
+        "exists": true,
+        "bytes": 5996,
+        "mtime_utc": "2026-08-12T14:41:42+00:00",
+        "sha256": "C517DC596ABE5F397FF16B0713CCD8781B0DF8B23569BA1C1934F357496A15FB"
+      },
+      "4h": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/4h/2026.parquet",
+        "exists": true,
+        "bytes": 5989,
+        "mtime_utc": "2026-08-11T11:09:16+00:00",
+        "sha256": "2185AB07C048E97C64155BE3004E7DB7C1FFA3101FA39FCA58DFBC6EE46DD1D4"
+      },
+      "1h": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/1h/2026.parquet",
+        "exists": true,
+        "bytes": 5984,
+        "mtime_utc": "2026-08-11T11:09:16+00:00",
+        "sha256": "249A8119215FA02CBEAFE2D7E946412CD7441F9E456339A5613EB59D702F0767"
+      },
+      "15m": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/15m/2026.parquet",
+        "exists": true,
+        "bytes": 5998,
+        "mtime_utc": "2026-08-11T11:09:16+00:00",
+        "sha256": "7D6EF28BD26F4A3CAE4E15A3CDBB3DEE5F89CD1625CACFDF61E14723ADE7AE4E"
+      },
+      "5m": {
+        "path": "data/purged_cv/default/binance/usdt_perpetual/5m/2026.parquet",
+        "exists": true,
+        "bytes": 5995,
+        "mtime_utc": "2026-08-11T11:09:18+00:00",
+        "sha256": "15F3745A9CEAFE9C62076B38641C72C752A199D7765B3C7E9EB59FC41665FA26"
+      }
+    }
+  },
+  "immutability": {
+    "factor_selection": {
+      "1d": {
+        "before_sha256": "B6CE50C27CAE6601FC0CED1CB650475BF471C337211D5C89D98B1FEB8432A2BB",
+        "after_sha256": "B6CE50C27CAE6601FC0CED1CB650475BF471C337211D5C89D98B1FEB8432A2BB",
+        "unchanged": true
+      },
+      "4h": {
+        "before_sha256": "BAE924AA39D5DDA300030052B5C69A55DA94DC230A30931ECFDE911BD1592918",
+        "after_sha256": "BAE924AA39D5DDA300030052B5C69A55DA94DC230A30931ECFDE911BD1592918",
+        "unchanged": true
+      },
+      "1h": {
+        "before_sha256": "89F17D02C7A4B6314A785DC8783836F88B233F9F04A83AD76D94E3AFEEC10022",
+        "after_sha256": "89F17D02C7A4B6314A785DC8783836F88B233F9F04A83AD76D94E3AFEEC10022",
+        "unchanged": true
+      },
+      "15m": {
+        "before_sha256": "898A40F41AF52452DB3D170C667DD6A2678CB7B9317C7A2D48CC7518DBE12788",
+        "after_sha256": "898A40F41AF52452DB3D170C667DD6A2678CB7B9317C7A2D48CC7518DBE12788",
+        "unchanged": true
+      },
+      "5m": {
+        "before_sha256": "1C80C6679DAA8133CED64C9D7978F02E4E9742CEBEECECB4DA4289F569F97FB0",
+        "after_sha256": "1C80C6679DAA8133CED64C9D7978F02E4E9742CEBEECECB4DA4289F569F97FB0",
+        "unchanged": true
+      }
+    },
+    "factor_validation": {
+      "1d": {
+        "before_sha256": "B7935E021B31BAD5BE9017577FCD49243A1E022480A47F44A5B6D5D2C4058137",
+        "after_sha256": "B7935E021B31BAD5BE9017577FCD49243A1E022480A47F44A5B6D5D2C4058137",
+        "unchanged": true
+      },
+      "4h": {
+        "before_sha256": "E49A86299CD989A8B1F5B91ABF90E92647993250A71351391EA2F9752F481EED",
+        "after_sha256": "E49A86299CD989A8B1F5B91ABF90E92647993250A71351391EA2F9752F481EED",
+        "unchanged": true
+      },
+      "1h": {
+        "before_sha256": "315EF539F46E94A7B28AB902D98E88D4B79EB7BD666687E5FCED6FF1B7C3CC30",
+        "after_sha256": "315EF539F46E94A7B28AB902D98E88D4B79EB7BD666687E5FCED6FF1B7C3CC30",
+        "unchanged": true
+      },
+      "15m": {
+        "before_sha256": "57FEF604E3F24DA6FBEEC836D5ADCB2979452DAA906A5C60639DA89CCAC38CB2",
+        "after_sha256": "57FEF604E3F24DA6FBEEC836D5ADCB2979452DAA906A5C60639DA89CCAC38CB2",
+        "unchanged": true
+      },
+      "5m": {
+        "before_sha256": "7F81C68E92FD51058DA13F54CDBA3E8F2981357F69D7F4E75A7FFB9474DA213D",
+        "after_sha256": "7F81C68E92FD51058DA13F54CDBA3E8F2981357F69D7F4E75A7FFB9474DA213D",
+        "unchanged": true
+      }
+    },
+    "purged_cv": {
+      "1d": {
+        "before_sha256": "C517DC596ABE5F397FF16B0713CCD8781B0DF8B23569BA1C1934F357496A15FB",
+        "after_sha256": "C517DC596ABE5F397FF16B0713CCD8781B0DF8B23569BA1C1934F357496A15FB",
+        "unchanged": true
+      },
+      "4h": {
+        "before_sha256": "2185AB07C048E97C64155BE3004E7DB7C1FFA3101FA39FCA58DFBC6EE46DD1D4",
+        "after_sha256": "2185AB07C048E97C64155BE3004E7DB7C1FFA3101FA39FCA58DFBC6EE46DD1D4",
+        "unchanged": true
+      },
+      "1h": {
+        "before_sha256": "249A8119215FA02CBEAFE2D7E946412CD7441F9E456339A5613EB59D702F0767",
+        "after_sha256": "249A8119215FA02CBEAFE2D7E946412CD7441F9E456339A5613EB59D702F0767",
+        "unchanged": true
+      },
+      "15m": {
+        "before_sha256": "7D6EF28BD26F4A3CAE4E15A3CDBB3DEE5F89CD1625CACFDF61E14723ADE7AE4E",
+        "after_sha256": "7D6EF28BD26F4A3CAE4E15A3CDBB3DEE5F89CD1625CACFDF61E14723ADE7AE4E",
+        "unchanged": true
+      },
+      "5m": {
+        "before_sha256": "15F3745A9CEAFE9C62076B38641C72C752A199D7765B3C7E9EB59FC41665FA26",
+        "after_sha256": "15F3745A9CEAFE9C62076B38641C72C752A199D7765B3C7E9EB59FC41665FA26",
+        "unchanged": true
+      }
+    }
+  },
+  "unexpected_non_wf_changes": [],
+  "walk_forward_status": {
+    "1d": "regenerated",
+    "4h": "not_regenerated_baseline_intact",
+    "1h": "not_started_baseline_intact",
+    "15m": "not_started_baseline_intact",
+    "5m": "not_started_baseline_intact"
+  },
+  "rss_peaks_python": {
+    "1d": {
+      "working_set_mb": 1472.34,
+      "private_mb": 3071.0,
+      "timestamp_utc": "2026-08-14T11:08:02.9149375Z"
+    },
+    "4h": {
+      "working_set_mb": 1594.25,
+      "private_mb": 3464.47,
+      "timestamp_utc": "2026-08-14T11:10:56.5186411Z"
+    }
+  },
+  "4h_load_progress": {
+    "factors_loaded": 248,
+    "labels_loaded": 248,
+    "factors_symbol_files_total": 283,
+    "assembled": false,
+    "output_written": false,
+    "oom_allocation_string": false
+  },
+  "stop_required": true
+}

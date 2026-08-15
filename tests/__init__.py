@@ -1,0 +1,1 @@
+"""CQROS test suite."""

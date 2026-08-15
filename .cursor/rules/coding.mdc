@@ -1,0 +1,443 @@
+---
+description: Coding standards and engineering rules for CQROS
+globs: ["src/**/*.py", "tests/**/*.py"]
+alwaysApply: true
+---
+
+# CQROS Coding Standards
+
+## Mission
+
+Write production-quality, maintainable, deterministic, and well-tested Python code.
+
+Code must prioritize:
+
+1. Correctness
+2. Readability
+3. Maintainability
+4. Testability
+5. Performance (only after correctness)
+
+---
+
+# Python Version
+
+Target Python 3.13.
+
+Use modern Python features when appropriate.
+
+Never write code for older Python versions.
+
+---
+
+# Style
+
+Follow PEP 8 unless overridden here.
+
+Maximum line length:
+
+100 characters
+
+Use Black formatting.
+
+Use Ruff linting.
+
+Use isort import ordering.
+
+Never disable lint rules without explanation.
+
+---
+
+# Type Hints
+
+Every public function must have complete type hints.
+
+Every method must have type hints.
+
+Every class attribute should have explicit types.
+
+Avoid Any whenever possible.
+
+Prefer Protocol, TypedDict, dataclass, Enum, Literal, and Generic where appropriate.
+
+---
+
+# Docstrings
+
+Every public module requires a module docstring.
+
+Every public class requires a docstring.
+
+Every public function requires a docstring.
+
+Docstrings should explain:
+
+Purpose
+
+Parameters
+
+Returns
+
+Raises
+
+Notes
+
+Examples (when useful)
+
+---
+
+# Functions
+
+Functions should perform one responsibility.
+
+Avoid functions larger than ~50 lines unless complexity requires it.
+
+Prefer small composable functions.
+
+Avoid deep nesting.
+
+Return early when appropriate.
+
+---
+
+# Classes
+
+Classes represent one concept.
+
+Avoid "god classes."
+
+Use dataclasses for immutable data.
+
+Prefer composition over inheritance.
+
+Use abstract base classes or Protocols for interfaces.
+
+---
+
+# Naming
+
+Use descriptive names.
+
+Good:
+
+load_dataset()
+
+calculate_information_coefficient()
+
+build_feature_matrix()
+
+Bad:
+
+run()
+
+do_work()
+
+process()
+
+Use nouns for classes.
+
+Use verbs for functions.
+
+Constants use UPPER_CASE.
+
+Private members begin with _.
+
+---
+
+# Imports
+
+Standard library
+
+↓
+
+Third-party
+
+↓
+
+CQROS packages
+
+Separate groups with one blank line.
+
+Never use wildcard imports.
+
+Never create circular imports.
+
+---
+
+# Logging
+
+Never use print().
+
+Always use logging.
+
+Log:
+
+startup
+
+shutdown
+
+major events
+
+warnings
+
+errors
+
+Avoid excessive debug logging.
+
+Never log secrets.
+
+---
+
+# Exceptions
+
+Never swallow exceptions.
+
+Never use:
+
+except:
+
+Always catch explicit exception types.
+
+Wrap external exceptions in CQROS exceptions where appropriate.
+
+Include context in raised exceptions.
+
+---
+
+# Configuration
+
+Never hardcode:
+
+paths
+
+URLs
+
+thresholds
+
+timeouts
+
+risk values
+
+exchange names
+
+Read from configuration.
+
+---
+
+# Determinism
+
+Research code must be reproducible.
+
+Control random seeds.
+
+Avoid hidden randomness.
+
+Record configuration used for execution.
+
+---
+
+# Data Structures
+
+Prefer:
+
+dataclass
+
+NamedTuple
+
+Enum
+
+TypedDict
+
+Protocol
+
+Avoid raw dictionaries for structured domain objects.
+
+---
+
+# Immutability
+
+Prefer immutable objects.
+
+Avoid mutating function inputs.
+
+Return new objects instead of modifying existing ones where practical.
+
+---
+
+# Complexity
+
+Keep cyclomatic complexity low.
+
+Refactor duplicated logic.
+
+Extract reusable utilities.
+
+Avoid deeply nested conditionals.
+
+---
+
+# Comments
+
+Write comments only when they explain *why*.
+
+Do not comment obvious code.
+
+Bad:
+
+# Increment i
+i += 1
+
+Good:
+
+# Binance occasionally returns duplicate funding records.
+# Deduplicate before validation.
+
+---
+
+# Magic Numbers
+
+Never use unexplained numeric literals.
+
+Bad:
+
+if score > 0.37:
+
+Good:
+
+if score > config.alpha.minimum_score:
+
+---
+
+# Time
+
+Use timezone-aware UTC datetimes only.
+
+Never use local machine time.
+
+Never assume exchange timestamps are local.
+
+---
+
+# File Access
+
+Use pathlib.Path.
+
+Avoid string path concatenation.
+
+Validate paths before reading or writing.
+
+---
+
+# Async Code
+
+Use async only for I/O-bound work.
+
+Do not use async for CPU-bound tasks.
+
+Avoid blocking calls inside async functions.
+
+---
+
+# Dependencies
+
+Use only approved libraries.
+
+Do not introduce new dependencies without approval.
+
+Prefer standard library when sufficient.
+
+---
+
+# Testing
+
+Every public function should have tests.
+
+Tests should be deterministic.
+
+Avoid sleeps in tests.
+
+Mock external services.
+
+Use fixtures.
+
+Test edge cases and failure paths.
+
+---
+
+# Security
+
+Never hardcode:
+
+API keys
+
+Passwords
+
+Tokens
+
+Secrets
+
+Never commit credentials.
+
+Read secrets from secure configuration.
+
+---
+
+# Performance
+
+Optimize only after correctness.
+
+Measure before optimizing.
+
+Avoid premature optimization.
+
+Prefer clear code over micro-optimizations.
+
+---
+
+# Code Reviews
+
+Before considering implementation complete, verify:
+
+✓ Type hints complete
+
+✓ Tests written
+
+✓ Documentation updated
+
+✓ Logging included
+
+✓ Errors handled
+
+✓ Configuration used
+
+✓ No duplication
+
+✓ No architecture violations
+
+✓ Ruff passes
+
+✓ Black passes
+
+✓ Pyright passes
+
+✓ Pytest passes
+
+Only then is code considered complete.
+
+---
+
+# Absolute Rules
+
+Never invent architecture.
+
+Never bypass validation.
+
+Never bypass governance.
+
+Never hardcode business logic.
+
+Never skip tests.
+
+Never skip documentation.
+
+Always produce code suitable for institutional production systems.

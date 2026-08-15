@@ -1,0 +1,5 @@
+fatal: detected dubious ownership in repository at 'D:/bss/CQROS'
+'D:/bss/CQROS' is on a file system that does not record ownership
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory D:/bss/CQROS

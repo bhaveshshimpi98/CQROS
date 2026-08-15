@@ -1,0 +1,79 @@
+# Python generated files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Python tooling and coverage caches
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+/.venv/
+/venv/
+/env/
+/ENV/
+
+# Packaging and build artifacts
+/build/
+/dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime output
+/logs/
+*.log
+
+# Temporary files
+/tmp/
+/temp/
+/.tmp/
+*.tmp
+
+# Local spill and cache artifacts
+/.spill/
+/spill/
+/cache/
+/.cache/
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+
+# Jupyter artifacts
+.ipynb_checkpoints/
+
+# Repository-local generated market data
+# Root anchoring protects src/cqros/data and similarly named package directories.
+/data/
+*.parquet
+*.feather
+
+# Source-controlled test datasets and fixtures remain trackable.
+!tests/datasets/**/*.parquet
+!tests/datasets/**/*.feather
+!tests/fixtures/**/*.parquet
+!tests/fixtures/**/*.feather
+
+# Research and governance reports must remain fully trackable.
+!reports/
+!reports/**
+
+# Large generated research/evaluation CSV artifacts
+/reports/walk_forward/walk_forward_evaluation_factors.csv
+/reports/walk_forward/factor_orientation_factors.csv
+/reports/factor_stability/input_partition_downstream_regen/wf_eval/walk_forward_evaluation_factors.csv
