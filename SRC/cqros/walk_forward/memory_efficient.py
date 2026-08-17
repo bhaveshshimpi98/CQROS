@@ -40,7 +40,8 @@ from cqros.storage.label_repository import LabelRepository
 from cqros.storage.layout import StorageLayout
 from cqros.walk_forward.engine import (
     SimpleWalkForwardEngine,
-    apply_walk_forward_aggregate_metrics,
+    _AggregateMetrics,
+    _compute_aggregate_metrics_frame,
     build_walk_forward_fold,
 )
 from cqros.walk_forward.evaluation_input import (
@@ -49,7 +50,11 @@ from cqros.walk_forward.evaluation_input import (
     assemble_walk_forward_symbol_input,
 )
 from cqros.walk_forward.exceptions import WalkForwardError
-from cqros.walk_forward.schema import CANONICAL_COLUMN_ORDER, WALK_FORWARD_SCHEMA
+from cqros.walk_forward.schema import (
+    CANONICAL_COLUMN_ORDER,
+    WALK_FORWARD_SCHEMA,
+    WalkForwardStatus,
+)
 
 __all__ = [
     "FULL_PANEL_EXECUTION_MODE",
@@ -94,6 +99,12 @@ _ENGINE_COLUMNS: Final[tuple[str, ...]] = (
     "selection_time",
     "selected",
     TARGET_COLUMN,
+)
+_AGGREGATE_COLUMNS: Final[tuple[str, ...]] = (
+    "train_score",
+    "test_score",
+    "overfit_gap",
+    "status",
 )
 _ERROR_CONFIG: Final[str] = "WF_MEMORY_CONFIG"
 _ERROR_EMPTY_JOIN: Final[str] = "WF_EVAL_EMPTY_JOIN"
@@ -480,16 +491,8 @@ class MemoryEfficientWalkForwardExecutor:
                 )
             )
 
-        raw_folds = (
-            pl.read_parquet(raw_parts)
-            .select(list(CANONICAL_COLUMN_ORDER))
-            .cast(WALK_FORWARD_SCHEMA)
-        )
-        return (
-            apply_walk_forward_aggregate_metrics(raw_folds)
-            .select(list(CANONICAL_COLUMN_ORDER))
-            .cast(WALK_FORWARD_SCHEMA)
-        )
+        aggregates = _aggregate_metrics_from_parts(raw_parts)
+        return _apply_aggregate_metrics_to_parts(raw_parts, aggregates)
 
 
 def assert_walk_forward_equivalent(
@@ -585,3 +588,37 @@ def _write_fold_rows(
         .write_parquet(path, compression="zstd")
     )
     return path
+
+
+def _aggregate_metrics_from_parts(raw_parts: Sequence[Path]) -> _AggregateMetrics:
+    """Replay the canonical PASS-only aggregate over spilled raw folds.
+
+    The spilled fold columns are reassembled as the same single-chunk frame
+    the full-panel engine reduces, so every floating-point bit is reproduced.
+    """
+    aggregate_frame = (
+        pl.read_parquet(raw_parts, columns=list(_AGGREGATE_COLUMNS))
+        .select(list(_AGGREGATE_COLUMNS))
+        .rechunk()
+    )
+    return _compute_aggregate_metrics_frame(
+        aggregate_frame.filter(pl.col("status") == WalkForwardStatus.PASS.value)
+    )
+
+
+def _apply_aggregate_metrics_to_parts(
+    raw_parts: Sequence[Path],
+    aggregates: _AggregateMetrics,
+) -> pl.DataFrame:
+    """Build the canonical output frame from spilled raw folds in bounded batches."""
+    return (
+        pl.scan_parquet(raw_parts)
+        .with_columns(
+            pl.lit(aggregates.mean_train_score, dtype=pl.Float64).alias("train_score"),
+            pl.lit(aggregates.mean_test_score, dtype=pl.Float64).alias("test_score"),
+            pl.lit(aggregates.walk_forward_stability, dtype=pl.Float64).alias("overfit_gap"),
+        )
+        .select(list(CANONICAL_COLUMN_ORDER))
+        .cast(WALK_FORWARD_SCHEMA)
+        .collect(engine="streaming")
+    )
